@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tạo Báo Giá Chuyên Nghiệp</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="page">
+        <header>
+            <div class="company-info">
+                <h1>Tên Công Ty Của Bạn</h1>
+                <p>Địa chỉ: 123 Đường ABC, Phường X, Quận Y, TP. Z<br>
+                Điện thoại: 0987 654 321 | Email: info@tencongty.com</p>
+            </div>
+            <div class="quote-title">
+                <h2>BÁO GIÁ</h2>
+                <p>Số: BG-2025-001</p>
+                <p>Ngày: <span id="quote-date"></span></p>
+            </div>
+        </header>
+
+        <section class="client-info">
+            <h3>Kính gửi:</h3>
+            <textarea placeholder="Nhập thông tin khách hàng ở đây..."></textarea>
+        </section>
+
+        <section class="quote-details">
+            <table id="quote-table">
+                <thead>
+                    <tr>
+                        <th>STT</th>
+                        <th>Nội dung</th>
+                        <th>Đơn vị</th>
+                        <th>Số lượng</th>
+                        <th>Đơn giá</th>
+                        <th>Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="5" class="text-right"><strong>Tổng cộng</strong></td>
+                        <td id="subtotal">0</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="text-right"><strong>Thuế VAT (10%)</strong></td>
+                        <td id="tax">0</td>
+                    </tr>
+                    <tr>
+                        <td colspan="5" class="text-right"><strong>TỔNG THANH TOÁN</strong></td>
+                        <td id="grand-total"><strong>0</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </section>
+
+        <footer>
+            <p><strong>Ghi chú:</strong> Báo giá có hiệu lực trong vòng 30 ngày.</p>
+            <div class="signature">
+                <p><strong>Người lập báo giá</strong></p>
+                <p>(Ký và ghi rõ họ tên)</p>
+            </div>
+        </footer>
+    </div>
+
+    <div class="controls no-print">
+        <button id="add-row">Thêm dòng</button>
+        <button onclick="window.print()">Xuất PDF / In</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

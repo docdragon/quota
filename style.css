@@ -1,0 +1,143 @@
+/* --- Kiểu dáng chung cho màn hình --- */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.page {
+    width: 210mm; /* Kích thước chiều rộng của trang A4 */
+    min-height: 297mm; /* Kích thước chiều cao của trang A4 */
+    padding: 20mm;
+    margin: 10px auto;
+    background: white;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 10px;
+}
+
+.quote-title h2 {
+    color: #007bff;
+    margin: 0;
+}
+
+.client-info textarea {
+    width: 100%;
+    height: 60px;
+    border: 1px solid #ccc;
+    padding: 5px;
+    margin-top: 20px;
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #f2f2f2;
+}
+
+tfoot {
+    font-weight: bold;
+}
+
+.text-right {
+    text-align: right;
+}
+
+input[type="text"], input[type="number"] {
+    width: 100%;
+    border: none;
+    padding: 4px;
+}
+
+footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #ccc;
+}
+
+.signature {
+    margin-top: 50px;
+    text-align: right;
+}
+
+/* --- Class tiện ích --- */
+.no-print {
+    margin-top: 20px;
+}
+
+.no-print button {
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    margin: 5px;
+}
+
+/* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
+@media print {
+    /* Ẩn các thành phần không cần thiết khi in */
+    .no-print, .controls {
+        display: none !important;
+    }
+
+    /* Reset lại giao diện cho trang in */
+    body {
+        background-color: #fff;
+        padding: 0;
+        margin: 0;
+    }
+
+    .page {
+        width: 100%;
+        min-height: initial;
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
+        border: none;
+    }
+    
+    /* Đảm bảo nội dung không bị cắt qua các trang */
+    table, section {
+        page-break-inside: auto;
+    }
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    thead {
+        display: table-header-group; /* Lặp lại header của bảng trên mỗi trang */
+    }
+
+    /* Hiển thị giá trị của các ô input thay vì ô input */
+    input {
+        border: none !important;
+        box-shadow: none !important;
+        background-color: transparent !important;
+    }
+    textarea {
+        border: none;
+    }
+}
