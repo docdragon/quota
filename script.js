@@ -5,6 +5,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const tableBody = document.querySelector('#quote-table tbody');
     const addRowBtn = document.getElementById('add-row');
+    const addSectionBtn = document.getElementById('add-section');
     let rowCount = 0;
 
     function createNewRow() {
@@ -20,17 +21,32 @@ document.addEventListener('DOMContentLoaded', function() {
         `;
         tableBody.appendChild(row);
     }
+    
+    function createNewSectionHeader() {
+        const row = document.createElement('tr');
+        row.className = 'section-header';
+        row.innerHTML = `
+            <td colspan="6"><input type="text" placeholder="Nhập tên hạng mục..."></td>
+        `;
+        tableBody.appendChild(row);
+    }
 
     function updateTotals() {
         let subtotal = 0;
         const rows = tableBody.querySelectorAll('tr');
 
         rows.forEach(row => {
-            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
-            const price = parseFloat(row.querySelector('.price').value) || 0;
-            const lineTotal = quantity * price;
-            row.querySelector('.line-total').textContent = lineTotal.toLocaleString();
-            subtotal += lineTotal;
+            const quantityInput = row.querySelector('.quantity');
+            const priceInput = row.querySelector('.price');
+            
+            // Chỉ tính toán cho các hàng chứa sản phẩm, bỏ qua hàng tiêu đề hạng mục
+            if (quantityInput && priceInput) {
+                const quantity = parseFloat(quantityInput.value) || 0;
+                const price = parseFloat(priceInput.value) || 0;
+                const lineTotal = quantity * price;
+                row.querySelector('.line-total').textContent = lineTotal.toLocaleString();
+                subtotal += lineTotal;
+            }
         });
 
         const tax = subtotal * 0.10; // Giả sử thuế VAT là 10%
@@ -43,6 +59,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Sự kiện khi nhấn nút "Thêm dòng"
     addRowBtn.addEventListener('click', createNewRow);
+
+    // Sự kiện khi nhấn nút "Thêm hạng mục"
+    addSectionBtn.addEventListener('click', createNewSectionHeader);
 
     // Sự kiện khi thay đổi số lượng hoặc đơn giá
     tableBody.addEventListener('input', function(e) {

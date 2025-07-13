@@ -67,6 +67,7 @@ input[type="text"], input[type="number"] {
     width: 100%;
     border: none;
     padding: 4px;
+    box-sizing: border-box;
 }
 
 footer {
@@ -95,6 +96,21 @@ footer {
     border-radius: 5px;
     margin: 5px;
 }
+
+/* Kiểu dáng cho hàng tiêu đề hạng mục */
+.section-header td {
+    background-color: #eaf6ff;
+    font-weight: bold;
+    padding: 10px 8px;
+}
+
+.section-header input[type="text"] {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #0056b3;
+    background-color: transparent;
+}
+
 
 /* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
 @media print {
@@ -132,12 +148,10 @@ footer {
     }
 
     /* Hiển thị giá trị của các ô input thay vì ô input */
-    input {
+    input, textarea {
         border: none !important;
         box-shadow: none !important;
         background-color: transparent !important;
-    }
-    textarea {
-        border: none;
+        color: #000 !important; /* Đảm bảo văn bản có thể đọc được khi in */
     }
 }
