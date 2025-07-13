@@ -54,14 +54,20 @@ th, td {
 
 th {
     background-color: #f2f2f2;
+    text-align: center;
 }
 
-/* Căn chỉnh cột số lượng, đơn giá, thành tiền */
-th:nth-child(4), td:nth-child(4),
-th:nth-child(5), td:nth-child(5),
-th:nth-child(6), td:nth-child(6) {
+
+/* Căn chỉnh cột số */
+th:nth-child(n+4), td:nth-child(n+4) {
     text-align: right;
 }
+/* Căn trái lại cột nội dung, đơn vị */
+th:nth-child(2), td:nth-child(2),
+th:nth-child(3), td:nth-child(3) {
+    text-align: left;
+}
+
 
 /* Cột hành động */
 th.actions-col, td.actions {
@@ -131,17 +137,45 @@ footer {
 }
 
 .delete-btn {
-    background-color: #ff4d4d;
-    color: white;
+    background: none;
     border: none;
-    border-radius: 4px;
-    padding: 5px 10px;
+    color: #ff4d4d;
     cursor: pointer;
-    font-size: 12px;
+    font-size: 20px;
+    padding: 0;
+    line-height: 1;
 }
 
 .delete-btn:hover {
-    background-color: #cc0000;
+    color: #cc0000;
+}
+
+/* Kiểu dáng cho ô Nội dung */
+.content-cell {
+    display: flex;
+    flex-direction: column;
+}
+.item-name {
+    font-weight: bold;
+}
+.item-spec {
+    font-style: italic;
+    font-size: 0.9em;
+    color: #555;
+}
+
+/* Kiểu dáng ô VAT */
+#vat-rate {
+    width: 45px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 2px 5px;
+    text-align: right;
+    font-weight: bold;
+    background-color: #f9f9f9;
+}
+tfoot strong {
+    vertical-align: middle;
 }
 
 
@@ -187,6 +221,11 @@ footer {
         background-color: transparent !important;
         color: #000 !important; /* Đảm bảo văn bản có thể đọc được khi in */
         padding: 4px 0;
+    }
+    
+    #vat-rate {
+       width: auto;
+       padding-right: 2px;
     }
 
     /* Căn chỉnh lại cho bản in */

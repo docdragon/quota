@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const tableBody = document.querySelector('#quote-table tbody');
     const addRowBtn = document.getElementById('add-row');
     const addCategoryBtn = document.getElementById('add-category');
+    const vatRateInput = document.getElementById('vat-rate');
     
     // Hàm định dạng số
     function formatCurrency(num) {
@@ -28,12 +29,21 @@ document.addEventListener('DOMContentLoaded', function() {
         row.className = 'item-row';
         row.innerHTML = `
             <td></td>
-            <td><input type="text" placeholder="Dịch vụ/Sản phẩm..."></td>
-            <td><input type="text" placeholder="Cái/Lần..." value="cái"></td>
+            <td>
+                <div class="content-cell">
+                    <input type="text" class="item-name" placeholder="Tên hạng mục...">
+                    <input type="text" class="item-spec" placeholder="Quy cách, mô tả...">
+                </div>
+            </td>
+            <td><input type="text" placeholder="cái/m²..." value="cái"></td>
+            <td><input type="number" class="dimension dim-d" value="0" min="0" step="0.01"></td>
+            <td><input type="number" class="dimension dim-s" value="0" min="0" step="0.01"></td>
+            <td><input type="number" class="dimension dim-c" value="0" min="0" step="0.01"></td>
+            <td class="volume text-right">0</td>
             <td><input type="number" class="quantity" value="1" min="0"></td>
             <td><input type="number" class="price" value="0" min="0"></td>
             <td class="line-total text-right">0</td>
-            <td class="actions"><button class="delete-btn">Xóa</button></td>
+            <td class="actions"><button class="delete-btn">🗑️</button></td>
         `;
         // Tìm danh mục cuối cùng để thêm dòng vào
         const lastCategory = tableBody.querySelector('tr.category-header:last-of-type');
@@ -55,9 +65,9 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = document.createElement('tr');
         row.className = 'category-header';
         row.innerHTML = `
-            <td colspan="5"><input type="text" placeholder="Nhập tên danh mục..."></td>
+            <td colspan="9"><input type="text" placeholder="Nhập tên danh mục..."></td>
             <td class="category-total text-right">0</td>
-            <td class="actions"><button class="delete-btn">Xóa</button></td>
+            <td class="actions"><button class="delete-btn">🗑️</button></td>
         `;
         tableBody.appendChild(row);
     }
@@ -80,9 +90,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentCategorySubtotal = 0;
                 currentCategoryTotalElement = row.querySelector('.category-total');
             } else if (row.classList.contains('item-row')) {
+                // Tính toán khối lượng
+                const length = parseFloat(row.querySelector('.dim-d').value) || 0;
+                const height = parseFloat(row.querySelector('.dim-c').value) || 0;
+                const volume = length * height;
+                row.querySelector('.volume').textContent = volume.toFixed(2);
+                
+                // Tính toán thành tiền
                 const quantityInput = row.querySelector('.quantity');
                 const priceInput = row.querySelector('.price');
-                
                 const quantity = parseFloat(quantityInput.value) || 0;
                 const price = parseFloat(priceInput.value) || 0;
                 const lineTotal = quantity * price;
@@ -99,7 +115,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentCategoryTotalElement.textContent = formatCurrency(currentCategorySubtotal);
         }
 
-        const taxRate = 0.10; // Giả sử thuế VAT là 10%
+        const taxRate = (parseFloat(vatRateInput.value) || 0) / 100;
         const tax = grandSubtotal * taxRate;
         const grandTotal = grandSubtotal + tax;
 
@@ -129,12 +145,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Sự kiện khi thay đổi số lượng hoặc đơn giá
+    // Sự kiện khi thay đổi giá trị trong các ô input
     tableBody.addEventListener('input', function(e) {
-        if (e.target.classList.contains('quantity') || e.target.classList.contains('price')) {
+        const target = e.target;
+        if (target.classList.contains('quantity') || target.classList.contains('price') || target.classList.contains('dimension')) {
             updateTotals();
         }
     });
+    
+    // Sự kiện khi thay đổi thuế VAT
+    vatRateInput.addEventListener('input', updateTotals);
+
 
     // Sự kiện khi nhấn nút "Thêm dòng"
     addRowBtn.addEventListener('click', () => {
@@ -149,9 +170,8 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // --- Khởi tạo ban đầu ---
-    // Thêm 1 danh mục và 2 dòng mặc định
+    // Thêm 1 danh mục và 1 dòng mặc định
     createNewCategoryRow();
-    createNewItemRow();
     createNewItemRow();
     // Cập nhật tên danh mục mặc định
     tableBody.querySelector('.category-header input').value = "Hạng mục chính";
