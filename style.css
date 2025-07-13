@@ -49,10 +49,24 @@ th, td {
     border: 1px solid #ddd;
     padding: 8px;
     text-align: left;
+    vertical-align: middle;
 }
 
 th {
     background-color: #f2f2f2;
+}
+
+/* Căn chỉnh cột số lượng, đơn giá, thành tiền */
+th:nth-child(4), td:nth-child(4),
+th:nth-child(5), td:nth-child(5),
+th:nth-child(6), td:nth-child(6) {
+    text-align: right;
+}
+
+/* Cột hành động */
+th.actions-col, td.actions {
+    text-align: center;
+    width: 50px;
 }
 
 tfoot {
@@ -68,6 +82,7 @@ input[type="text"], input[type="number"] {
     border: none;
     padding: 4px;
     box-sizing: border-box;
+    background-color: transparent;
 }
 
 footer {
@@ -97,25 +112,43 @@ footer {
     margin: 5px;
 }
 
-/* Kiểu dáng cho hàng tiêu đề hạng mục */
-.section-header td {
+/* Kiểu dáng cho hàng danh mục */
+.category-header td {
     background-color: #eaf6ff;
     font-weight: bold;
     padding: 10px 8px;
 }
 
-.section-header input[type="text"] {
+.category-header input[type="text"] {
     font-weight: bold;
     font-size: 1.1em;
     color: #0056b3;
-    background-color: transparent;
+}
+
+.category-total {
+    font-weight: bold;
+    text-align: right;
+}
+
+.delete-btn {
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.delete-btn:hover {
+    background-color: #cc0000;
 }
 
 
 /* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
 @media print {
     /* Ẩn các thành phần không cần thiết khi in */
-    .no-print, .controls {
+    .no-print, .controls, .actions-col, .actions {
         display: none !important;
     }
 
@@ -153,5 +186,11 @@ footer {
         box-shadow: none !important;
         background-color: transparent !important;
         color: #000 !important; /* Đảm bảo văn bản có thể đọc được khi in */
+        padding: 4px 0;
+    }
+
+    /* Căn chỉnh lại cho bản in */
+    td, th {
+        padding: 8px 4px;
     }
 }

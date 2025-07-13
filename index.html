@@ -37,21 +37,23 @@
                         <th>Số lượng</th>
                         <th>Đơn giá</th>
                         <th>Thành tiền</th>
+                        <th class="actions-col">Xóa</th>
                     </tr>
                 </thead>
                 <tbody>
-                    </tbody>
+                    <!-- Rows will be added here by JavaScript -->
+                </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="5" class="text-right"><strong>Tổng cộng</strong></td>
+                        <td colspan="6" class="text-right"><strong>Tổng cộng</strong></td>
                         <td id="subtotal">0</td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="text-right"><strong>Thuế VAT (10%)</strong></td>
+                        <td colspan="6" class="text-right"><strong>Thuế VAT (10%)</strong></td>
                         <td id="tax">0</td>
                     </tr>
                     <tr>
-                        <td colspan="5" class="text-right"><strong>TỔNG THANH TOÁN</strong></td>
+                        <td colspan="6" class="text-right"><strong>TỔNG THANH TOÁN</strong></td>
                         <td id="grand-total"><strong>0</strong></td>
                     </tr>
                 </tfoot>
@@ -69,7 +71,7 @@
 
     <div class="controls no-print">
         <button id="add-row">Thêm dòng</button>
-        <button id="add-section">+hạng mục mới</button>
+        <button id="add-category">+ Danh mục tổng</button>
         <button onclick="window.print()">Xuất PDF / In</button>
     </div>
 

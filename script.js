@@ -5,63 +5,129 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const tableBody = document.querySelector('#quote-table tbody');
     const addRowBtn = document.getElementById('add-row');
-    const addSectionBtn = document.getElementById('add-section');
-    let rowCount = 0;
+    const addCategoryBtn = document.getElementById('add-category');
+    
+    // Hàm định dạng số
+    function formatCurrency(num) {
+        return num.toLocaleString('vi-VN');
+    }
 
-    function createNewRow() {
-        rowCount++;
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>${rowCount}</td>
-            <td><input type="text" placeholder="Dịch vụ/Sản phẩm..."></td>
-            <td><input type="text" placeholder="Cái/Lần..."></td>
-            <td><input type="number" class="quantity" value="1" min="0"></td>
-            <td><input type="number" class="price" value="0" min="0"></td>
-            <td class="line-total">0</td>
-        `;
-        tableBody.appendChild(row);
+    // Hàm cập nhật STT
+    function updateRowNumbers() {
+        let itemCounter = 0;
+        const rows = tableBody.querySelectorAll('tr.item-row');
+        rows.forEach(row => {
+            itemCounter++;
+            row.querySelector('td:first-child').textContent = itemCounter;
+        });
     }
     
-    function createNewSectionHeader() {
+    // Hàm tạo dòng sản phẩm mới
+    function createNewItemRow() {
         const row = document.createElement('tr');
-        row.className = 'section-header';
+        row.className = 'item-row';
         row.innerHTML = `
-            <td colspan="6"><input type="text" placeholder="Nhập tên hạng mục..."></td>
+            <td></td>
+            <td><input type="text" placeholder="Dịch vụ/Sản phẩm..."></td>
+            <td><input type="text" placeholder="Cái/Lần..." value="cái"></td>
+            <td><input type="number" class="quantity" value="1" min="0"></td>
+            <td><input type="number" class="price" value="0" min="0"></td>
+            <td class="line-total text-right">0</td>
+            <td class="actions"><button class="delete-btn">Xóa</button></td>
+        `;
+        // Tìm danh mục cuối cùng để thêm dòng vào
+        const lastCategory = tableBody.querySelector('tr.category-header:last-of-type');
+        if (lastCategory) {
+            // Chèn vào sau danh mục và các item-row hiện có trong danh mục đó
+             let insertBeforeNode = lastCategory.nextSibling;
+             while(insertBeforeNode && insertBeforeNode.classList.contains('item-row')) {
+                 insertBeforeNode = insertBeforeNode.nextSibling;
+             }
+             tableBody.insertBefore(row, insertBeforeNode);
+        } else {
+            tableBody.appendChild(row);
+        }
+        updateRowNumbers();
+    }
+    
+    // Hàm tạo dòng danh mục mới
+    function createNewCategoryRow() {
+        const row = document.createElement('tr');
+        row.className = 'category-header';
+        row.innerHTML = `
+            <td colspan="5"><input type="text" placeholder="Nhập tên danh mục..."></td>
+            <td class="category-total text-right">0</td>
+            <td class="actions"><button class="delete-btn">Xóa</button></td>
         `;
         tableBody.appendChild(row);
     }
 
+    // Hàm cập nhật tổng tiền
     function updateTotals() {
-        let subtotal = 0;
+        let grandSubtotal = 0;
+        let currentCategorySubtotal = 0;
+        let currentCategoryTotalElement = null;
+
         const rows = tableBody.querySelectorAll('tr');
 
         rows.forEach(row => {
-            const quantityInput = row.querySelector('.quantity');
-            const priceInput = row.querySelector('.price');
-            
-            // Chỉ tính toán cho các hàng chứa sản phẩm, bỏ qua hàng tiêu đề hạng mục
-            if (quantityInput && priceInput) {
+            if (row.classList.contains('category-header')) {
+                // Nếu có danh mục trước đó, cập nhật tổng của nó
+                if (currentCategoryTotalElement) {
+                    currentCategoryTotalElement.textContent = formatCurrency(currentCategorySubtotal);
+                }
+                // Reset cho danh mục mới
+                currentCategorySubtotal = 0;
+                currentCategoryTotalElement = row.querySelector('.category-total');
+            } else if (row.classList.contains('item-row')) {
+                const quantityInput = row.querySelector('.quantity');
+                const priceInput = row.querySelector('.price');
+                
                 const quantity = parseFloat(quantityInput.value) || 0;
                 const price = parseFloat(priceInput.value) || 0;
                 const lineTotal = quantity * price;
-                row.querySelector('.line-total').textContent = lineTotal.toLocaleString();
-                subtotal += lineTotal;
+
+                row.querySelector('.line-total').textContent = formatCurrency(lineTotal);
+                
+                grandSubtotal += lineTotal;
+                currentCategorySubtotal += lineTotal;
             }
         });
 
-        const tax = subtotal * 0.10; // Giả sử thuế VAT là 10%
-        const grandTotal = subtotal + tax;
+        // Cập nhật tổng cho danh mục cuối cùng
+        if (currentCategoryTotalElement) {
+            currentCategoryTotalElement.textContent = formatCurrency(currentCategorySubtotal);
+        }
 
-        document.getElementById('subtotal').textContent = subtotal.toLocaleString();
-        document.getElementById('tax').textContent = tax.toLocaleString();
-        document.getElementById('grand-total').querySelector('strong').textContent = grandTotal.toLocaleString();
+        const taxRate = 0.10; // Giả sử thuế VAT là 10%
+        const tax = grandSubtotal * taxRate;
+        const grandTotal = grandSubtotal + tax;
+
+        document.getElementById('subtotal').textContent = formatCurrency(grandSubtotal);
+        document.getElementById('tax').textContent = formatCurrency(tax);
+        document.getElementById('grand-total').querySelector('strong').textContent = formatCurrency(grandTotal);
     }
 
-    // Sự kiện khi nhấn nút "Thêm dòng"
-    addRowBtn.addEventListener('click', createNewRow);
-
-    // Sự kiện khi nhấn nút "Thêm hạng mục"
-    addSectionBtn.addEventListener('click', createNewSectionHeader);
+    // Xử lý sự kiện chung cho cả bảng
+    tableBody.addEventListener('click', function(e) {
+        if (e.target.classList.contains('delete-btn')) {
+            const rowToDelete = e.target.closest('tr');
+            
+            if (rowToDelete.classList.contains('category-header')) {
+                // Xóa cả danh mục và các dòng con của nó
+                let nextRow = rowToDelete.nextElementSibling;
+                while(nextRow && nextRow.classList.contains('item-row')) {
+                    const rowToRemove = nextRow;
+                    nextRow = nextRow.nextElementSibling;
+                    rowToRemove.remove();
+                }
+            }
+            
+            rowToDelete.remove();
+            updateRowNumbers();
+            updateTotals();
+        }
+    });
 
     // Sự kiện khi thay đổi số lượng hoặc đơn giá
     tableBody.addEventListener('input', function(e) {
@@ -70,7 +136,24 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Thêm 2 dòng mặc định khi tải trang
-    createNewRow();
-    createNewRow();
+    // Sự kiện khi nhấn nút "Thêm dòng"
+    addRowBtn.addEventListener('click', () => {
+        createNewItemRow();
+        updateTotals();
+    });
+
+    // Sự kiện khi nhấn nút "Thêm danh mục"
+    addCategoryBtn.addEventListener('click', () => {
+        createNewCategoryRow();
+        updateTotals();
+    });
+
+    // --- Khởi tạo ban đầu ---
+    // Thêm 1 danh mục và 2 dòng mặc định
+    createNewCategoryRow();
+    createNewItemRow();
+    createNewItemRow();
+    // Cập nhật tên danh mục mặc định
+    tableBody.querySelector('.category-header input').value = "Hạng mục chính";
+    updateTotals();
 });
