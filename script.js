@@ -31,30 +31,28 @@ document.addEventListener('DOMContentLoaded', function() {
             <td></td>
             <td>
                 <div class="content-cell">
-                    <input type="text" class="item-name" placeholder="Tên hạng mục...">
-                    <input type="text" class="item-spec" placeholder="Quy cách, mô tả...">
+                    <input type="text" class="item-name" placeholder="Tên hạng mục, sản phẩm...">
+                    <input type="text" class="item-spec" placeholder="Quy cách, mô tả chi tiết...">
                     <div class="dimensions-wrapper">
-                        <span>Kích thước (D x S x C):</span>
-                        <input type="number" class="dimension dim-d" value="0" min="0" step="0.01" title="Dài">
+                        <label>K.thước (m):</label>
+                        <input type="number" class="dimension dim-d" value="0" min="0" step="0.01" title="Dài (m)">
                         <span>x</span>
-                        <input type="number" class="dimension dim-s" value="0" min="0" step="0.01" title="Sâu">
+                        <input type="number" class="dimension dim-s" value="0" min="0" step="0.01" title="Sâu (m)">
                         <span>x</span>
-                        <input type="number" class="dimension dim-c" value="0" min="0" step="0.01" title="Cao">
-                        <span>(m)</span>
+                        <input type="number" class="dimension dim-c" value="0" min="0" step="0.01" title="Cao (m)">
                     </div>
                 </div>
             </td>
-            <td><input type="text" placeholder="cái/m²..." value="cái"></td>
+            <td><input type="text" value="cái"></td>
             <td class="volume text-right">0.00</td>
             <td><input type="number" class="quantity" value="1" min="1"></td>
             <td><input type="number" class="price" value="0" min="0"></td>
             <td class="line-total text-right">0</td>
-            <td class="actions"><button class="delete-btn">🗑️</button></td>
+            <td class="actions"><button class="delete-btn" title="Xóa dòng">🗑️</button></td>
         `;
         // Tìm danh mục cuối cùng để thêm dòng vào
         const lastCategory = tableBody.querySelector('tr.category-header:last-of-type');
         if (lastCategory) {
-            // Chèn vào sau danh mục và các item-row hiện có trong danh mục đó
              let insertBeforeNode = lastCategory.nextSibling;
              while(insertBeforeNode && insertBeforeNode.classList.contains('item-row')) {
                  insertBeforeNode = insertBeforeNode.nextSibling;
@@ -73,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         row.innerHTML = `
             <td colspan="6"><input type="text" placeholder="Nhập tên danh mục..."></td>
             <td class="category-total text-right">0</td>
-            <td class="actions"><button class="delete-btn">🗑️</button></td>
+            <td class="actions"><button class="delete-btn" title="Xóa danh mục">🗑️</button></td>
         `;
         tableBody.appendChild(row);
     }
@@ -96,11 +94,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentCategorySubtotal = 0;
                 currentCategoryTotalElement = row.querySelector('.category-total');
             } else if (row.classList.contains('item-row')) {
-                // Tính toán khối lượng. Sử dụng Dài x Cao cho m²
+                // Tính toán khối lượng và hiển thị công thức (Dài x Cao)
                 const length = parseFloat(row.querySelector('.dim-d').value) || 0;
                 const height = parseFloat(row.querySelector('.dim-c').value) || 0;
                 const volume = length * height;
-                row.querySelector('.volume').textContent = volume.toFixed(2);
+                const volumeCell = row.querySelector('.volume');
+                if (length > 0 && height > 0) {
+                    volumeCell.textContent = `${length.toFixed(2)}x${height.toFixed(2)} = ${volume.toFixed(2)}`;
+                } else {
+                    volumeCell.textContent = '0.00';
+                }
                 
                 // Tính toán thành tiền
                 const quantityInput = row.querySelector('.quantity');

@@ -24,21 +24,21 @@
 
         <section class="client-info">
             <h3>Kính gửi:</h3>
-            <textarea placeholder="Nhập thông tin khách hàng ở đây..."></textarea>
+            <textarea placeholder="Nhập tên công ty, địa chỉ, và thông tin liên hệ của khách hàng..."></textarea>
         </section>
 
         <section class="quote-details">
             <table id="quote-table">
                 <thead>
                     <tr>
-                        <th>STT</th>
-                        <th>Nội dung</th>
-                        <th>Đơn vị</th>
-                        <th>Khối lượng (m²)</th>
-                        <th>Số lượng</th>
-                        <th>Đơn giá</th>
-                        <th>Thành tiền</th>
-                        <th class="actions-col">Xóa</th>
+                        <th class="col-stt">STT</th>
+                        <th class="col-content">Nội dung</th>
+                        <th class="col-unit">Đơn vị</th>
+                        <th class="col-volume">Khối lượng (m²)</th>
+                        <th class="col-qty">Số lượng</th>
+                        <th class="col-price">Đơn giá</th>
+                        <th class="col-total">Thành tiền</th>
+                        <th class="col-actions actions-col">Xóa</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -46,20 +46,20 @@
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td colspan="6" class="text-right"><strong>Tổng cộng</strong></td>
-                        <td id="subtotal">0</td>
+                        <td colspan="6" class="total-label"><strong>Tổng cộng</strong></td>
+                        <td id="subtotal" class="total-value">0</td>
                         <td></td>
                     </tr>
                     <tr>
-                         <td colspan="6" class="text-right">
+                         <td colspan="6" class="total-label">
                             <strong>Thuế VAT (<input type="number" id="vat-rate" value="10" min="0" max="100">%)</strong>
                         </td>
-                        <td id="tax">0</td>
+                        <td id="tax" class="total-value">0</td>
                         <td></td>
                     </tr>
                     <tr>
-                        <td colspan="6" class="text-right"><strong>TỔNG THANH TOÁN</strong></td>
-                        <td id="grand-total"><strong>0</strong></td>
+                        <td colspan="6" class="total-label grand-total-label"><strong>TỔNG THANH TOÁN</strong></td>
+                        <td id="grand-total" class="total-value"><strong>0</strong></td>
                         <td></td>
                     </tr>
                 </tfoot>
@@ -76,8 +76,8 @@
     </div>
 
     <div class="controls no-print">
-        <button id="add-row">Thêm dòng</button>
-        <button id="add-category">+ Danh mục tổng</button>
+        <button id="add-row">Thêm Hạng Mục</button>
+        <button id="add-category">+ Thêm Danh Mục</button>
         <button onclick="window.print()">Xuất PDF / In</button>
     </div>
 

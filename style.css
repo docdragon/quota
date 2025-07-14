@@ -1,275 +1,244 @@
 /* --- Kiểu dáng chung cho màn hình --- */
+:root {
+    --primary-color: #005A9C;
+    --light-primary-color: #e6f7ff;
+    --border-color: #dee2e6;
+    --background-color: #f0f2f5;
+    --text-color: #212529;
+    --light-text-color: #6c757d;
+}
+
 body {
-    font-family: 'Arial', sans-serif;
-    background-color: #f4f4f4;
-    color: #333;
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
 }
 
 .page {
-    width: 210mm; /* Kích thước chiều rộng của trang A4 */
-    min-height: 297mm; /* Kích thước chiều cao của trang A4 */
-    padding: 20mm;
+    width: 100%;
+    max-width: 240mm;
+    min-height: 297mm;
+    padding: 25mm;
     margin: 10px auto;
     background: white;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     box-sizing: border-box;
+    border-radius: 6px;
 }
 
 header {
     display: flex;
     justify-content: space-between;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 10px;
+    align-items: flex-start;
+    border-bottom: 3px solid var(--primary-color);
+    padding-bottom: 15px;
+    margin-bottom: 25px;
+}
+
+.company-info h1 {
+    font-size: 1.8em;
+    color: var(--text-color);
+    margin: 0 0 5px 0;
+}
+.company-info p {
+    font-size: 0.9em;
+    color: var(--light-text-color);
+    margin: 0;
+    line-height: 1.5;
 }
 
 .quote-title h2 {
-    color: #007bff;
+    color: var(--primary-color);
     margin: 0;
+    font-size: 2.4em;
+    text-align: right;
+    font-weight: 700;
+}
+.quote-title p {
+    text-align: right;
+    margin: 2px 0 0 0;
+    font-size: 0.95em;
 }
 
+.client-info h3 {
+    font-weight: 600;
+    margin-bottom: 8px;
+}
 .client-info textarea {
     width: 100%;
-    height: 60px;
-    border: 1px solid #ccc;
-    padding: 5px;
-    margin-top: 20px;
+    height: 80px;
+    border: 1px solid var(--border-color);
+    padding: 10px;
     box-sizing: border-box;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1em;
+    resize: vertical;
+}
+.client-info textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 90, 156, 0.2);
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 20px;
-    table-layout: fixed; /* Giúp cột đều hơn */
+    margin-top: 25px;
 }
 
 th, td {
-    border: 1px solid #ddd;
-    padding: 8px;
+    border: 1px solid var(--border-color);
+    padding: 12px 10px;
     text-align: left;
-    vertical-align: middle;
+    vertical-align: top;
     word-wrap: break-word;
 }
 
 th {
-    background-color: #f2f2f2;
+    background-color: #f8f9fa;
     text-align: center;
+    font-weight: 600;
+    font-size: 0.9em;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
 /* Phân chia chiều rộng cột */
-th:nth-child(1), td:nth-child(1) { width: 5%; text-align: center; } /* STT */
-th:nth-child(2), td:nth-child(2) { width: 40%; text-align: left; } /* Nội dung */
-th:nth-child(3), td:nth-child(3) { width: 10%; text-align: left;} /* Đơn vị */
-th:nth-child(4), td:nth-child(4) { width: 10%; text-align: right; } /* Khối lượng */
-th:nth-child(5), td:nth-child(5) { width: 8%; text-align: right; } /* Số lượng */
-th:nth-child(6), td:nth-child(6) { width: 12%; text-align: right; } /* Đơn giá */
-th:nth-child(7), td:nth-child(7) { width: 15%; text-align: right; } /* Thành tiền */
-th.actions-col, td.actions { width: 50px; text-align: center; } /* Xóa */
+.col-stt { width: 5%; }
+.col-content { width: 42%; }
+.col-unit { width: 8%; }
+.col-volume { width: 15%; text-align: right; }
+.col-qty { width: 7%; }
+.col-price { width: 11.5%; }
+.col-total { width: 11.5%; }
+.col-actions { width: 50px; }
 
 
-tfoot {
-    font-weight: bold;
-}
+td { vertical-align: middle; }
+tbody tr:hover { background-color: #f8f9fa; }
+td.text-right, th.text-right { text-align: right; }
 
-.text-right {
-    text-align: right;
-}
+tfoot { font-size: 1.05em; }
+tfoot td { border: none; padding: 8px 10px; }
+tfoot tr:first-child td { padding-top: 15px; }
+tfoot td.total-label { text-align: right; padding-right: 20px; }
+tfoot td.grand-total-label { font-size: 1.1em; }
+tfoot .total-value { text-align: right; font-weight: 700; }
+tfoot #grand-total { color: var(--primary-color); font-size: 1.25em; }
 
 input[type="text"], input[type="number"] {
     width: 100%;
     border: none;
-    padding: 4px;
+    padding: 6px 2px;
     box-sizing: border-box;
     background-color: transparent;
+    font-family: inherit;
+    font-size: 1em;
 }
+input:focus { outline: none; background-color: #e6f7ff; }
+td input[type="number"], td .quantity { text-align: right; }
 
-footer {
-    margin-top: 40px;
-    padding-top: 20px;
-    border-top: 1px solid #ccc;
-}
+footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 0.9em; }
+.signature { margin-top: 50px; text-align: right; }
 
-.signature {
-    margin-top: 50px;
-    text-align: right;
-}
-
-/* --- Class tiện ích --- */
-.no-print {
-    margin-top: 20px;
-}
-
-.no-print button {
-    padding: 10px 20px;
+.controls { margin: 20px 0; display: flex; gap: 10px; }
+.controls button {
+    padding: 12px 24px;
     font-size: 16px;
     cursor: pointer;
-    background-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
     border: none;
     border-radius: 5px;
-    margin: 5px;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
 }
+.controls button:hover { background-color: #004a80; }
+.controls button:active { transform: scale(0.98); }
+#add-category { background-color: var(--light-text-color); }
+#add-category:hover { background-color: #5a6268; }
 
-/* Kiểu dáng cho hàng danh mục */
 .category-header td {
-    background-color: #eaf6ff;
+    background-color: var(--light-primary-color);
     font-weight: bold;
-    padding: 10px 8px;
+    border-left: 3px solid var(--primary-color);
 }
-
-.category-header input[type="text"] {
-    font-weight: bold;
-    font-size: 1.1em;
-    color: #0056b3;
-}
-
-.category-total {
-    font-weight: bold;
-    text-align: right;
-}
+.category-header input[type="text"] { font-weight: bold; font-size: 1.1em; color: var(--primary-color); }
+.category-total { font-weight: bold; text-align: right; color: var(--primary-color); }
 
 .delete-btn {
-    background: none;
-    border: none;
-    color: #ff4d4d;
-    cursor: pointer;
-    font-size: 20px;
-    padding: 0;
-    line-height: 1;
+    background: none; border: none; color: #dc3545; cursor: pointer;
+    font-size: 20px; padding: 0; line-height: 1; opacity: 0.5;
+    transition: opacity 0.2s ease;
 }
+tr:hover .delete-btn { opacity: 1; }
+.delete-btn:hover { color: #c82333; }
 
-.delete-btn:hover {
-    color: #cc0000;
-}
+.content-cell { display: flex; flex-direction: column; gap: 4px; }
+.item-name { font-weight: 600; }
+.item-spec { font-style: italic; font-size: 0.9em; color: var(--light-text-color); }
+td .volume { font-size: 0.9em; color: var(--light-text-color); font-family: 'Courier New', Courier, monospace; }
 
-/* Kiểu dáng cho ô Nội dung */
-.content-cell {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-.item-name {
-    font-weight: bold;
-}
-.item-spec {
-    font-style: italic;
-    font-size: 0.9em;
-    color: #555;
-}
-
-/* Kiểu dáng cho ô kích thước được gộp vào */
 .dimensions-wrapper {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.9em;
-    color: #666;
+    display: flex; align-items: center; gap: 5px;
+    margin-top: 8px; padding: 6px 8px; background-color: #f8f9fa;
+    border-radius: 4px; border: 1px solid #e9ecef;
 }
+.dimensions-wrapper label { font-size: 0.85em; font-weight: 500; color: var(--light-text-color); }
 .dimensions-wrapper input[type="number"] {
-    width: 60px;
-    border: 1px solid #eee;
-    border-radius: 3px;
-    text-align: right;
-    padding: 2px 4px;
-    background-color: #fcfcfc;
+    width: 60px; border: none; text-align: center; padding: 4px; background-color: white;
+    border: 1px solid var(--border-color); border-radius: 3px;
 }
-.dimensions-wrapper span {
-    line-height: 1;
-}
+.dimensions-wrapper input[type="number"]:focus { background-color: var(--light-primary-color); }
+.dimensions-wrapper span { color: var(--light-text-color); }
 
-
-/* Kiểu dáng ô VAT */
 #vat-rate {
-    width: 45px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 2px 5px;
-    text-align: right;
-    font-weight: bold;
-    background-color: #f9f9f9;
+    width: 50px; border: 1px solid var(--border-color); border-radius: 4px;
+    padding: 2px 5px; text-align: center; font-weight: 700;
 }
-tfoot strong {
-    vertical-align: middle;
-}
-
 
 /* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
 @media print {
-    /* Ẩn các thành phần không cần thiết khi in */
-    .no-print, .controls, .actions-col, .actions, .delete-btn {
-        display: none !important;
-    }
+    .no-print, .controls, .actions-col, .actions { display: none !important; }
+    @page { size: A4; margin: 20mm; }
 
-    /* Reset lại giao diện cho trang in */
-    body {
-        background-color: #fff;
-        padding: 0;
-        margin: 0;
-    }
-
+    body { background-color: #fff; padding: 0; margin: 0; }
     .page {
-        width: 100%;
-        min-height: initial;
-        box-shadow: none;
-        margin: 0;
-        padding: 0;
-        border: none;
+        width: 100%; max-width: 100%; min-height: initial;
+        box-shadow: none; margin: 0; padding: 0; border: none; border-radius: 0;
     }
     
-    table {
-        table-layout: fixed;
-    }
+    th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
+    .category-header td { background-color: #eaf6ff !important; -webkit-print-color-adjust: exact; }
 
-    /* Cập nhật lại chiều rộng cột cho bản in (không có cột Xóa) */
-    th:nth-child(1), td:nth-child(1) { width: 5%; }
-    th:nth-child(2), td:nth-child(2) { width: 45%; }
-    th:nth-child(3), td:nth-child(3) { width: 10%; }
-    th:nth-child(4), td:nth-child(4) { width: 10%; }
-    th:nth-child(5), td:nth-child(5) { width: 10%; }
-    th:nth-child(6), td:nth-child(6) { width: 10%; }
-    th:nth-child(7), td:nth-child(7) { width: 10%; }
+    /* Cập nhật lại chiều rộng cột cho bản in */
+    .col-stt { width: 5%; }
+    .col-content { width: 45%; }
+    .col-unit { width: 8%; }
+    .col-volume { width: 14%; }
+    .col-qty { width: 7%; }
+    .col-price { width: 10.5%; }
+    .col-total { width: 10.5%; }
 
-    /* Đảm bảo nội dung không bị cắt qua các trang */
-    table, section {
-        page-break-inside: auto;
-    }
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto;
-    }
-    thead {
-        display: table-header-group; /* Lặp lại header của bảng trên mỗi trang */
-    }
+    table, section { page-break-inside: auto; }
+    tr { page-break-inside: avoid; page-break-after: auto; }
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
 
-    /* Hiển thị giá trị của các ô input thay vì ô input */
     input, textarea {
-        border: none !important;
-        box-shadow: none !important;
-        background-color: transparent !important;
-        color: #000 !important; /* Đảm bảo văn bản có thể đọc được khi in */
-        padding: 4px 0;
-        width: 100% !important;
+        border: none !important; box-shadow: none !important; background-color: transparent !important;
+        color: #000 !important; padding: 2px 0; width: 100%;
     }
+    .dimensions-wrapper { background-color: transparent !important; border: none !important; padding: 2px 0 !important; }
+    .dimensions-wrapper input { padding: 0 !important; }
     
-    .dimensions-wrapper input[type="number"] {
-        padding: 2px !important;
-    }
-
-    #vat-rate {
-       width: auto;
-       padding-right: 2px;
-    }
-
-    /* Căn chỉnh lại cho bản in */
-    td, th {
-        padding: 8px 4px;
-        font-size: 10pt; /* Giảm cỡ chữ cho vừa trang in */
-    }
-    .item-spec, .dimensions-wrapper {
-        font-size: 9pt;
-    }
+    td, th { padding: 8px 4px; font-size: 9.5pt; }
+    .item-spec, .dimensions-wrapper, td .volume { font-size: 8.5pt; }
 }
