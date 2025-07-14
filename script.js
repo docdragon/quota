@@ -33,14 +33,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 <div class="content-cell">
                     <input type="text" class="item-name" placeholder="Tên hạng mục...">
                     <input type="text" class="item-spec" placeholder="Quy cách, mô tả...">
+                    <div class="dimensions-wrapper">
+                        <span>Kích thước (D x S x C):</span>
+                        <input type="number" class="dimension dim-d" value="0" min="0" step="0.01" title="Dài">
+                        <span>x</span>
+                        <input type="number" class="dimension dim-s" value="0" min="0" step="0.01" title="Sâu">
+                        <span>x</span>
+                        <input type="number" class="dimension dim-c" value="0" min="0" step="0.01" title="Cao">
+                        <span>(m)</span>
+                    </div>
                 </div>
             </td>
             <td><input type="text" placeholder="cái/m²..." value="cái"></td>
-            <td><input type="number" class="dimension dim-d" value="0" min="0" step="0.01"></td>
-            <td><input type="number" class="dimension dim-s" value="0" min="0" step="0.01"></td>
-            <td><input type="number" class="dimension dim-c" value="0" min="0" step="0.01"></td>
-            <td class="volume text-right">0</td>
-            <td><input type="number" class="quantity" value="1" min="0"></td>
+            <td class="volume text-right">0.00</td>
+            <td><input type="number" class="quantity" value="1" min="1"></td>
             <td><input type="number" class="price" value="0" min="0"></td>
             <td class="line-total text-right">0</td>
             <td class="actions"><button class="delete-btn">🗑️</button></td>
@@ -65,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = document.createElement('tr');
         row.className = 'category-header';
         row.innerHTML = `
-            <td colspan="9"><input type="text" placeholder="Nhập tên danh mục..."></td>
+            <td colspan="6"><input type="text" placeholder="Nhập tên danh mục..."></td>
             <td class="category-total text-right">0</td>
             <td class="actions"><button class="delete-btn">🗑️</button></td>
         `;
@@ -90,7 +96,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentCategorySubtotal = 0;
                 currentCategoryTotalElement = row.querySelector('.category-total');
             } else if (row.classList.contains('item-row')) {
-                // Tính toán khối lượng
+                // Tính toán khối lượng. Sử dụng Dài x Cao cho m²
                 const length = parseFloat(row.querySelector('.dim-d').value) || 0;
                 const height = parseFloat(row.querySelector('.dim-c').value) || 0;
                 const volume = length * height;
@@ -148,8 +154,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sự kiện khi thay đổi giá trị trong các ô input
     tableBody.addEventListener('input', function(e) {
         const target = e.target;
-        if (target.classList.contains('quantity') || target.classList.contains('price') || target.classList.contains('dimension')) {
-            updateTotals();
+        if (target.tagName === 'INPUT') {
+             updateTotals();
         }
     });
     

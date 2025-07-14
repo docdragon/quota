@@ -37,12 +37,14 @@ header {
     border: 1px solid #ccc;
     padding: 5px;
     margin-top: 20px;
+    box-sizing: border-box;
 }
 
 table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 20px;
+    table-layout: fixed; /* Giúp cột đều hơn */
 }
 
 th, td {
@@ -50,6 +52,7 @@ th, td {
     padding: 8px;
     text-align: left;
     vertical-align: middle;
+    word-wrap: break-word;
 }
 
 th {
@@ -57,23 +60,16 @@ th {
     text-align: center;
 }
 
+/* Phân chia chiều rộng cột */
+th:nth-child(1), td:nth-child(1) { width: 5%; text-align: center; } /* STT */
+th:nth-child(2), td:nth-child(2) { width: 40%; text-align: left; } /* Nội dung */
+th:nth-child(3), td:nth-child(3) { width: 10%; text-align: left;} /* Đơn vị */
+th:nth-child(4), td:nth-child(4) { width: 10%; text-align: right; } /* Khối lượng */
+th:nth-child(5), td:nth-child(5) { width: 8%; text-align: right; } /* Số lượng */
+th:nth-child(6), td:nth-child(6) { width: 12%; text-align: right; } /* Đơn giá */
+th:nth-child(7), td:nth-child(7) { width: 15%; text-align: right; } /* Thành tiền */
+th.actions-col, td.actions { width: 50px; text-align: center; } /* Xóa */
 
-/* Căn chỉnh cột số */
-th:nth-child(n+4), td:nth-child(n+4) {
-    text-align: right;
-}
-/* Căn trái lại cột nội dung, đơn vị */
-th:nth-child(2), td:nth-child(2),
-th:nth-child(3), td:nth-child(3) {
-    text-align: left;
-}
-
-
-/* Cột hành động */
-th.actions-col, td.actions {
-    text-align: center;
-    width: 50px;
-}
 
 tfoot {
     font-weight: bold;
@@ -154,6 +150,7 @@ footer {
 .content-cell {
     display: flex;
     flex-direction: column;
+    gap: 4px;
 }
 .item-name {
     font-weight: bold;
@@ -163,6 +160,27 @@ footer {
     font-size: 0.9em;
     color: #555;
 }
+
+/* Kiểu dáng cho ô kích thước được gộp vào */
+.dimensions-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.9em;
+    color: #666;
+}
+.dimensions-wrapper input[type="number"] {
+    width: 60px;
+    border: 1px solid #eee;
+    border-radius: 3px;
+    text-align: right;
+    padding: 2px 4px;
+    background-color: #fcfcfc;
+}
+.dimensions-wrapper span {
+    line-height: 1;
+}
+
 
 /* Kiểu dáng ô VAT */
 #vat-rate {
@@ -182,7 +200,7 @@ tfoot strong {
 /* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
 @media print {
     /* Ẩn các thành phần không cần thiết khi in */
-    .no-print, .controls, .actions-col, .actions {
+    .no-print, .controls, .actions-col, .actions, .delete-btn {
         display: none !important;
     }
 
@@ -202,6 +220,19 @@ tfoot strong {
         border: none;
     }
     
+    table {
+        table-layout: fixed;
+    }
+
+    /* Cập nhật lại chiều rộng cột cho bản in (không có cột Xóa) */
+    th:nth-child(1), td:nth-child(1) { width: 5%; }
+    th:nth-child(2), td:nth-child(2) { width: 45%; }
+    th:nth-child(3), td:nth-child(3) { width: 10%; }
+    th:nth-child(4), td:nth-child(4) { width: 10%; }
+    th:nth-child(5), td:nth-child(5) { width: 10%; }
+    th:nth-child(6), td:nth-child(6) { width: 10%; }
+    th:nth-child(7), td:nth-child(7) { width: 10%; }
+
     /* Đảm bảo nội dung không bị cắt qua các trang */
     table, section {
         page-break-inside: auto;
@@ -221,8 +252,13 @@ tfoot strong {
         background-color: transparent !important;
         color: #000 !important; /* Đảm bảo văn bản có thể đọc được khi in */
         padding: 4px 0;
+        width: 100% !important;
     }
     
+    .dimensions-wrapper input[type="number"] {
+        padding: 2px !important;
+    }
+
     #vat-rate {
        width: auto;
        padding-right: 2px;
@@ -231,5 +267,9 @@ tfoot strong {
     /* Căn chỉnh lại cho bản in */
     td, th {
         padding: 8px 4px;
+        font-size: 10pt; /* Giảm cỡ chữ cho vừa trang in */
+    }
+    .item-spec, .dimensions-wrapper {
+        font-size: 9pt;
     }
 }
