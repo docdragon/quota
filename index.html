@@ -76,10 +76,14 @@
 
         <div class="table-actions no-print">
             <button id="add-row">+Dòng</button>
+            <button id="add-category">+Nhóm</button>
         </div>
 
         <footer>
-            <p><strong>Ghi chú:</strong> Báo giá có hiệu lực trong vòng 30 ngày.</p>
+            <div class="notes">
+                <strong>Ghi chú:</strong>
+                <textarea rows="3">Báo giá có hiệu lực trong vòng 30 ngày.</textarea>
+            </div>
             <div class="signature">
                 <p><strong>Người lập báo giá</strong></p>
                 <p>(Ký và ghi rõ họ tên)</p>
@@ -88,7 +92,6 @@
     </div>
 
     <div class="controls no-print">
-        <button id="add-category">+Nhóm</button>
         <button onclick="window.print()">Xuất PDF / In</button>
     </div>
 

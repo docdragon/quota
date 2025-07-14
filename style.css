@@ -118,6 +118,7 @@ table {
     width: 100%;
     border-collapse: collapse;
     margin-top: 5px;
+    table-layout: fixed;
 }
 
 th, td {
@@ -139,13 +140,17 @@ th {
 
 /* Phân chia chiều rộng cột */
 .col-stt { width: 5%; }
-.col-content { width: 45%; }
+.col-content { width: 40%; }
 .col-unit { width: 8%; }
-.col-volume { width: 10%; text-align: right; }
-.col-qty { width: 7%; text-align: right;}
-/* col-price and col-total are flexible */
-.col-actions { width: 50px; }
+.col-volume { width: 8%; }
+.col-qty { width: 7%; }
+.col-price { width: 12%; }
+.col-total { width: 15%; }
+.col-actions { width: 5%; }
 
+th.col-volume, th.col-qty, th.col-price, th.col-total {
+    text-align: right;
+}
 
 td { vertical-align: middle; }
 tbody tr:hover { background-color: #f8f9fa; }
@@ -172,8 +177,46 @@ input:focus { outline: none; background-color: #e6f7ff; }
 td input[type="number"], td .quantity { text-align: right; }
 th.col-qty { text-align: center; }
 
-footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 0.9em; }
-.signature { margin-top: 50px; text-align: right; }
+footer {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid #ccc;
+    font-size: 0.9em;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 40px;
+}
+.signature {
+    margin-top: 0;
+    text-align: right;
+    flex-shrink: 0;
+}
+.notes {
+    flex: 1;
+}
+.notes strong {
+    display: block;
+    margin-bottom: 5px;
+}
+.notes textarea {
+    width: 100%;
+    border: 1px solid var(--border-color);
+    padding: 8px 12px;
+    box-sizing: border-box;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1em;
+    line-height: 1.4;
+    resize: vertical;
+    min-height: 60px;
+    transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.notes textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(0, 90, 156, 0.2);
+}
 
 .controls { margin: 20px 0; display: flex; gap: 10px; justify-content: center; }
 .controls button {
@@ -189,8 +232,6 @@ footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-s
 }
 .controls button:hover { background-color: #004a80; }
 .controls button:active { transform: scale(0.98); }
-#add-category { background-color: var(--light-text-color); }
-#add-category:hover { background-color: #5a6268; }
 
 .category-header td {
     background-color: var(--light-primary-color);
@@ -256,15 +297,21 @@ td .volume { font-size: 0.9em; color: var(--text-color); font-family: 'Courier N
     padding: 10px 20px;
     font-size: 15px;
     cursor: pointer;
-    background-color: #007bff;
+    background-color: var(--primary-color);
     color: white;
     border: none;
     border-radius: 5px;
     font-weight: 500;
     transition: background-color 0.2s ease, transform 0.1s ease;
 }
-.table-actions button:hover { background-color: #0069d9; }
+.table-actions button:hover { background-color: #004a80; }
 .table-actions button:active { transform: scale(0.98); }
+.table-actions #add-category {
+    background-color: var(--light-text-color);
+}
+.table-actions #add-category:hover {
+    background-color: #5a6268;
+}
 
 
 /* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
@@ -283,11 +330,12 @@ td .volume { font-size: 0.9em; color: var(--text-color); font-family: 'Courier N
 
     /* Cập nhật lại chiều rộng cột cho bản in */
     .col-stt { width: 5%; }
-    .col-content { width: 45%; }
+    .col-content { width: 40%; }
     .col-unit { width: 8%; }
-    .col-volume { width: 10%; }
+    .col-volume { width: 8%; }
     .col-qty { width: 7%; }
-    /* col-price and col-total are flexible */
+    .col-price { width: 12%; }
+    .col-total { width: 15%; }
 
     table, section { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
@@ -310,4 +358,5 @@ td .volume { font-size: 0.9em; color: var(--text-color); font-family: 'Courier N
     
     td, th { padding: 8px 4px; font-size: 9.5pt; }
     .item-spec, .dimensions-wrapper, td .volume { font-size: 8.5pt; }
+    .notes textarea { min-height: unset; }
 }
