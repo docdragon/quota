@@ -47,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <td><input type="text" value="cái"></td>
             <td class="volume text-right">0.00</td>
             <td><input type="number" class="quantity" value="1" min="1"></td>
-            <td><input type="number" class="price" value="0" min="0"></td>
+            <td><input type="text" class="price" value="0" inputmode="numeric"></td>
             <td class="line-total text-right">0</td>
             <td class="actions"><button class="delete-btn" title="Xóa dòng">&times;</button></td>
         `;
@@ -106,7 +106,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 const quantityInput = row.querySelector('.quantity');
                 const priceInput = row.querySelector('.price');
                 const quantity = parseFloat(quantityInput.value) || 0;
-                const price = parseFloat(priceInput.value) || 0;
+                
+                // Lấy giá trị từ ô đơn giá đã định dạng và chuyển về dạng số
+                const priceValue = priceInput.value || '0';
+                const price = parseFloat(priceValue.replace(/\./g, '')) || 0;
+
                 const lineTotal = quantity * price;
 
                 row.querySelector('.line-total').textContent = formatCurrency(lineTotal);
@@ -156,9 +160,25 @@ document.addEventListener('DOMContentLoaded', function() {
     // Sự kiện khi thay đổi giá trị trong các ô input
     tableBody.addEventListener('input', function(e) {
         const target = e.target;
-        if (target.tagName === 'INPUT') {
-             updateTotals();
+        if (target.tagName !== 'INPUT') {
+            return;
         }
+
+        // Tự động định dạng ô đơn giá
+        if (target.classList.contains('price')) {
+            const input = target;
+            let numericString = input.value.replace(/\D/g, ''); // Chỉ giữ lại chữ số
+
+            if (numericString) {
+                // Chuyển đổi sang BigInt để xóa số 0 ở đầu và xử lý số lớn
+                const number = BigInt(numericString);
+                input.value = new Intl.NumberFormat('vi-VN').format(number);
+            } else {
+                input.value = ''; // Cho phép xóa hết
+            }
+        }
+        
+        updateTotals(); // Cập nhật tổng sau mỗi lần thay đổi input
     });
     
     // Sự kiện khi thay đổi thuế VAT
