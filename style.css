@@ -42,17 +42,38 @@ header {
     margin-bottom: 25px;
 }
 
-.company-info h1 {
+.company-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex-basis: 60%;
+}
+
+.company-info input {
+    border: none;
+    background: transparent;
+    padding: 2px;
+    width: 100%;
+    font-family: inherit;
+    transition: background-color 0.2s ease-in-out;
+    border-radius: 3px;
+}
+.company-info input:focus {
+    outline: none;
+    background-color: var(--light-primary-color);
+}
+.company-info .company-name-input {
     font-size: 1.8em;
+    font-weight: 700;
     color: var(--text-color);
     margin: 0 0 5px 0;
 }
-.company-info p {
+.company-info .company-details-input {
     font-size: 0.9em;
     color: var(--light-text-color);
-    margin: 0;
     line-height: 1.5;
 }
+
 
 .quote-title h2 {
     color: var(--primary-color);
@@ -67,22 +88,27 @@ header {
     font-size: 0.95em;
 }
 
-.client-info h3 {
-    font-weight: 600;
-    margin-bottom: 8px;
+.client-info-grid {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px 12px;
+    align-items: center;
+    margin-bottom: 25px;
 }
-.client-info textarea {
+.client-info-grid label {
+    font-weight: 600;
+    text-align: right;
+}
+.client-info-grid input {
     width: 100%;
-    height: 80px;
     border: 1px solid var(--border-color);
-    padding: 10px;
+    padding: 8px 12px;
     box-sizing: border-box;
     border-radius: 4px;
     font-family: inherit;
     font-size: 1em;
-    resize: vertical;
 }
-.client-info textarea:focus {
+.client-info-grid input:focus {
     border-color: var(--primary-color);
     outline: none;
     box-shadow: 0 0 0 2px rgba(0, 90, 156, 0.2);
@@ -91,7 +117,7 @@ header {
 table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 25px;
+    margin-top: 5px;
 }
 
 th, td {
@@ -113,12 +139,11 @@ th {
 
 /* Phân chia chiều rộng cột */
 .col-stt { width: 5%; }
-.col-content { width: 42%; }
+.col-content { width: 45%; }
 .col-unit { width: 8%; }
-.col-volume { width: 15%; text-align: right; }
+.col-volume { width: 10%; text-align: right; }
 .col-qty { width: 7%; text-align: right;}
-.col-price { width: 11.5%; }
-.col-total { width: 11.5%; }
+/* col-price and col-total are flexible */
 .col-actions { width: 50px; }
 
 
@@ -260,10 +285,9 @@ td .volume { font-size: 0.9em; color: var(--text-color); font-family: 'Courier N
     .col-stt { width: 5%; }
     .col-content { width: 45%; }
     .col-unit { width: 8%; }
-    .col-volume { width: 14%; }
+    .col-volume { width: 10%; }
     .col-qty { width: 7%; }
-    .col-price { width: 10.5%; }
-    .col-total { width: 10.5%; }
+    /* col-price and col-total are flexible */
 
     table, section { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
@@ -274,6 +298,13 @@ td .volume { font-size: 0.9em; color: var(--text-color); font-family: 'Courier N
         border: none !important; box-shadow: none !important; background-color: transparent !important;
         color: #000 !important; padding: 2px 0; width: 100%;
     }
+    .client-info-grid, .company-info input {
+        padding: 0 !important;
+    }
+    .client-info-grid {
+        gap: 2px 8px;
+    }
+
     .dimensions-wrapper { background-color: transparent !important; border: none !important; padding: 2px 0 !important; }
     .dimensions-wrapper input { padding: 0 !important; }
     

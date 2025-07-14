@@ -12,9 +12,10 @@
     <div class="page">
         <header>
             <div class="company-info">
-                <h1>Tên Công Ty Của Bạn</h1>
-                <p>Địa chỉ: 123 Đường ABC, Phường X, Quận Y, TP. Z<br>
-                Điện thoại: 0987 654 321 | Email: info@tencongty.com</p>
+                <input type="text" class="company-name-input" placeholder="Tên Công Ty Của Bạn" value="Tên Công Ty Của Bạn">
+                <input type="text" class="company-details-input" placeholder="Địa chỉ" value="Địa chỉ: 123 Đường ABC, Phường X, Quận Y, TP. Z">
+                <input type="text" class="company-details-input" placeholder="Điện thoại | Email" value="Điện thoại: 0987 654 321 | Email: info@tencongty.com">
+                <input type="text" class="company-details-input" placeholder="Số tài khoản ngân hàng">
             </div>
             <div class="quote-title">
                 <h2>BÁO GIÁ</h2>
@@ -24,8 +25,14 @@
         </header>
 
         <section class="client-info">
-            <h3>Kính gửi:</h3>
-            <textarea placeholder="Nhập tên công ty, địa chỉ, và thông tin liên hệ của khách hàng..."></textarea>
+             <div class="client-info-grid">
+                <label for="client-name">Kính gửi:</label>
+                <input type="text" id="client-name" placeholder="Tên khách hàng / Tên công ty">
+                <label for="client-phone">Điện thoại:</label>
+                <input type="text" id="client-phone" placeholder="Số điện thoại">
+                <label for="client-address">Địa chỉ:</label>
+                <input type="text" id="client-address" placeholder="Địa chỉ khách hàng">
+            </div>
         </section>
 
         <section class="quote-details">
@@ -68,7 +75,7 @@
         </section>
 
         <div class="table-actions no-print">
-            <button id="add-row">+ Thêm Hạng Mục</button>
+            <button id="add-row">+Dòng</button>
         </div>
 
         <footer>
@@ -81,7 +88,7 @@
     </div>
 
     <div class="controls no-print">
-        <button id="add-category">+ Thêm Danh Mục</button>
+        <button id="add-category">+Nhóm</button>
         <button onclick="window.print()">Xuất PDF / In</button>
     </div>
 
