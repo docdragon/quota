@@ -1,3 +1,4 @@
+
 document.addEventListener('DOMContentLoaded', function() {
     // Đặt ngày hiện tại cho báo giá
     const today = new Date();
@@ -32,7 +33,6 @@ document.addEventListener('DOMContentLoaded', function() {
             <td>
                 <div class="content-cell">
                     <input type="text" class="item-name" placeholder="Tên hạng mục, sản phẩm...">
-                    <input type="text" class="item-spec" placeholder="Quy cách, mô tả chi tiết...">
                     <div class="dimensions-wrapper">
                         <label>K.thước (m):</label>
                         <input type="number" class="dimension dim-d" value="0" min="0" step="0.01" title="Dài (m)">
@@ -41,6 +41,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>x</span>
                         <input type="number" class="dimension dim-c" value="0" min="0" step="0.01" title="Cao (m)">
                     </div>
+                    <input type="text" class="item-spec" placeholder="Quy cách, mô tả chi tiết...">
                 </div>
             </td>
             <td><input type="text" value="cái"></td>
@@ -48,7 +49,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <td><input type="number" class="quantity" value="1" min="1"></td>
             <td><input type="number" class="price" value="0" min="0"></td>
             <td class="line-total text-right">0</td>
-            <td class="actions"><button class="delete-btn" title="Xóa dòng">🗑️</button></td>
+            <td class="actions"><button class="delete-btn" title="Xóa dòng">&times;</button></td>
         `;
         // Tìm danh mục cuối cùng để thêm dòng vào
         const lastCategory = tableBody.querySelector('tr.category-header:last-of-type');
@@ -71,7 +72,7 @@ document.addEventListener('DOMContentLoaded', function() {
         row.innerHTML = `
             <td colspan="6"><input type="text" placeholder="Nhập tên danh mục..."></td>
             <td class="category-total text-right">0</td>
-            <td class="actions"><button class="delete-btn" title="Xóa danh mục">🗑️</button></td>
+            <td class="actions"><button class="delete-btn" title="Xóa danh mục">&times;</button></td>
         `;
         tableBody.appendChild(row);
     }
@@ -94,16 +95,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 currentCategorySubtotal = 0;
                 currentCategoryTotalElement = row.querySelector('.category-total');
             } else if (row.classList.contains('item-row')) {
-                // Tính toán khối lượng và hiển thị công thức (Dài x Cao)
+                // Tính toán khối lượng
                 const length = parseFloat(row.querySelector('.dim-d').value) || 0;
                 const height = parseFloat(row.querySelector('.dim-c').value) || 0;
                 const volume = length * height;
                 const volumeCell = row.querySelector('.volume');
-                if (length > 0 && height > 0) {
-                    volumeCell.textContent = `${length.toFixed(2)}x${height.toFixed(2)} = ${volume.toFixed(2)}`;
-                } else {
-                    volumeCell.textContent = '0.00';
-                }
+                volumeCell.textContent = volume.toFixed(2);
                 
                 // Tính toán thành tiền
                 const quantityInput = row.querySelector('.quantity');
@@ -135,8 +132,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Xử lý sự kiện chung cho cả bảng
     tableBody.addEventListener('click', function(e) {
-        if (e.target.classList.contains('delete-btn')) {
-            const rowToDelete = e.target.closest('tr');
+        // Use .closest() to handle clicks on the button's content (the '×' symbol)
+        const deleteButton = e.target.closest('.delete-btn');
+        if (deleteButton) {
+            const rowToDelete = deleteButton.closest('tr');
             
             if (rowToDelete.classList.contains('category-header')) {
                 // Xóa cả danh mục và các dòng con của nó

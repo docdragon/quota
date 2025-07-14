@@ -1,3 +1,4 @@
+
 /* --- Kiểu dáng chung cho màn hình --- */
 :root {
     --primary-color: #005A9C;
@@ -22,8 +23,8 @@ body {
 
 .page {
     width: 100%;
-    max-width: 240mm;
-    min-height: 297mm;
+    max-width: 297mm; /* A3 width */
+    min-height: 420mm; /* A3 height */
     padding: 25mm;
     margin: 10px auto;
     background: white;
@@ -115,7 +116,7 @@ th {
 .col-content { width: 42%; }
 .col-unit { width: 8%; }
 .col-volume { width: 15%; text-align: right; }
-.col-qty { width: 7%; }
+.col-qty { width: 7%; text-align: right;}
 .col-price { width: 11.5%; }
 .col-total { width: 11.5%; }
 .col-actions { width: 50px; }
@@ -144,11 +145,12 @@ input[type="text"], input[type="number"] {
 }
 input:focus { outline: none; background-color: #e6f7ff; }
 td input[type="number"], td .quantity { text-align: right; }
+th.col-qty { text-align: center; }
 
 footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-size: 0.9em; }
 .signature { margin-top: 50px; text-align: right; }
 
-.controls { margin: 20px 0; display: flex; gap: 10px; }
+.controls { margin: 20px 0; display: flex; gap: 10px; justify-content: center; }
 .controls button {
     padding: 12px 24px;
     font-size: 16px;
@@ -174,21 +176,37 @@ footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #ccc; font-s
 .category-total { font-weight: bold; text-align: right; color: var(--primary-color); }
 
 .delete-btn {
-    background: none; border: none; color: #dc3545; cursor: pointer;
-    font-size: 20px; padding: 0; line-height: 1; opacity: 0.5;
-    transition: opacity 0.2s ease;
+    background: none;
+    border: none;
+    color: #dc3545;
+    cursor: pointer;
+    font-size: 22px;
+    font-weight: 700;
+    line-height: 1;
+    opacity: 0.5;
+    transition: all 0.2s ease;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
 }
 tr:hover .delete-btn { opacity: 1; }
-.delete-btn:hover { color: #c82333; }
+.delete-btn:hover {
+    color: #c82333;
+    transform: rotate(90deg);
+}
 
-.content-cell { display: flex; flex-direction: column; gap: 4px; }
+.content-cell { display: flex; flex-direction: column; gap: 8px; }
 .item-name { font-weight: 600; }
 .item-spec { font-style: italic; font-size: 0.9em; color: var(--light-text-color); }
-td .volume { font-size: 0.9em; color: var(--light-text-color); font-family: 'Courier New', Courier, monospace; }
+td .volume { font-size: 0.9em; color: var(--text-color); font-family: 'Courier New', Courier, monospace; }
 
 .dimensions-wrapper {
     display: flex; align-items: center; gap: 5px;
-    margin-top: 8px; padding: 6px 8px; background-color: #f8f9fa;
+    padding: 6px 8px; background-color: #f8f9fa;
     border-radius: 4px; border: 1px solid #e9ecef;
 }
 .dimensions-wrapper label { font-size: 0.85em; font-weight: 500; color: var(--light-text-color); }
@@ -204,10 +222,30 @@ td .volume { font-size: 0.9em; color: var(--light-text-color); font-family: 'Cou
     padding: 2px 5px; text-align: center; font-weight: 700;
 }
 
+.table-actions {
+    margin: 15px 0 25px 0;
+    display: flex;
+    gap: 10px;
+}
+.table-actions button {
+    padding: 10px 20px;
+    font-size: 15px;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-weight: 500;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+}
+.table-actions button:hover { background-color: #0069d9; }
+.table-actions button:active { transform: scale(0.98); }
+
+
 /* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
 @media print {
-    .no-print, .controls, .actions-col, .actions { display: none !important; }
-    @page { size: A4; margin: 20mm; }
+    .no-print, .controls, .actions-col, .actions, .table-actions { display: none !important; }
+    @page { size: A3; margin: 20mm; }
 
     body { background-color: #fff; padding: 0; margin: 0; }
     .page {

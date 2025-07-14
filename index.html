@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -34,8 +35,8 @@
                         <th class="col-stt">STT</th>
                         <th class="col-content">Nội dung</th>
                         <th class="col-unit">Đơn vị</th>
-                        <th class="col-volume">Khối lượng (m²)</th>
-                        <th class="col-qty">Số lượng</th>
+                        <th class="col-volume">KL (m²)</th>
+                        <th class="col-qty">SL</th>
                         <th class="col-price">Đơn giá</th>
                         <th class="col-total">Thành tiền</th>
                         <th class="col-actions actions-col">Xóa</th>
@@ -66,6 +67,10 @@
             </table>
         </section>
 
+        <div class="table-actions no-print">
+            <button id="add-row">+ Thêm Hạng Mục</button>
+        </div>
+
         <footer>
             <p><strong>Ghi chú:</strong> Báo giá có hiệu lực trong vòng 30 ngày.</p>
             <div class="signature">
@@ -76,7 +81,6 @@
     </div>
 
     <div class="controls no-print">
-        <button id="add-row">Thêm Hạng Mục</button>
         <button id="add-category">+ Thêm Danh Mục</button>
         <button onclick="window.print()">Xuất PDF / In</button>
     </div>
