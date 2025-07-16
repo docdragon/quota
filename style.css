@@ -1,4 +1,3 @@
-
 /* --- Kiểu dáng chung cho màn hình --- */
 :root {
     --primary-color: #005A9C;
@@ -13,12 +12,106 @@ body {
     font-family: 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     background-color: var(--background-color);
     color: var(--text-color);
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+#tabs-container {
+    background-color: #e9ecef;
+    padding: 5px 15px 0 15px;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tab {
+    background-color: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-bottom: none;
+    padding: 10px 15px;
+    border-radius: 6px 6px 0 0;
+    cursor: pointer;
+    position: relative;
+    bottom: -1px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: background-color 0.2s;
+    max-width: 200px;
+}
+.tab span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.tab:hover {
+    background-color: #fff;
+}
+.tab.active {
+    background-color: white;
+    border-color: var(--primary-color) var(--border-color) white;
+    font-weight: 600;
+    color: var(--primary-color);
+    padding-bottom: 11px;
+}
+.tab-close-btn {
+    background: none;
+    border: none;
+    color: var(--light-text-color);
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 50%;
+    transition: all 0.2s;
+}
+.tab:hover .tab-close-btn {
+    color: #495057;
+}
+.tab .tab-close-btn:hover {
+    background-color: #e9ecef;
+    color: #dc3545;
+}
+.tab-name-edit {
+    border: 1px solid var(--primary-color);
+    padding: 2px 4px;
+    font-family: inherit;
+    font-size: inherit;
+    outline: none;
+}
+
+#add-tab-btn {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 10px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.2s;
+}
+#add-tab-btn:hover {
+    background-color: #004a80;
+}
+
+.page-container {
     display: flex;
     flex-direction: column;
     align-items: center;
     padding: 20px;
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
 }
 
 .page {
@@ -31,6 +124,7 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
     box-sizing: border-box;
     border-radius: 6px;
+    border-top-left-radius: 0;
 }
 
 header {
@@ -62,19 +156,21 @@ header {
     outline: none;
     background-color: var(--light-primary-color);
 }
-.company-info .company-name-input {
+.company-name-input {
     font-size: 1.8em;
     font-weight: 700;
     color: var(--text-color);
     margin: 0 0 5px 0;
 }
-.company-info .company-details-input {
+.company-details-input {
     font-size: 0.9em;
     color: var(--light-text-color);
     line-height: 1.5;
 }
 
-
+.quote-title {
+    text-align: right;
+}
 .quote-title h2 {
     color: var(--primary-color);
     margin: 0;
@@ -86,6 +182,23 @@ header {
     text-align: right;
     margin: 2px 0 0 0;
     font-size: 0.95em;
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+}
+.quote-title input {
+    border: none;
+    background: transparent;
+    text-align: right;
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0;
+    width: 120px;
+    margin-left: 5px;
+}
+.quote-title input:focus {
+     background-color: var(--light-primary-color);
+     outline: none;
 }
 
 .client-info-grid {

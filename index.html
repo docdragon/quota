@@ -8,17 +8,19 @@
 </head>
 <body>
 
+    <div id="tabs-container" class="no-print"></div>
+
     <div class="page">
         <header>
             <div class="company-info">
-                <input type="text" class="company-name-input" placeholder="Tên Công Ty Của Bạn" value="Tên Công Ty Của Bạn">
-                <input type="text" class="company-details-input" placeholder="Địa chỉ" value="Địa chỉ: 123 Đường ABC, Phường X, Quận Y, TP. Z">
-                <input type="text" class="company-details-input" placeholder="Điện thoại | Email" value="Điện thoại: 0987 654 321 | Email: info@tencongty.com">
-                <input type="text" class="company-details-input" placeholder="Số tài khoản ngân hàng">
+                <input type="text" id="company-name" class="company-name-input" placeholder="Tên Công Ty Của Bạn">
+                <input type="text" id="company-address" class="company-details-input" placeholder="Địa chỉ">
+                <input type="text" id="company-contact" class="company-details-input" placeholder="Điện thoại | Email">
+                <input type="text" id="company-bank" class="company-details-input" placeholder="Số tài khoản ngân hàng">
             </div>
             <div class="quote-title">
                 <h2>BÁO GIÁ</h2>
-                <p>Số: BG-2025-001</p>
+                <p>Số: <input type="text" id="quote-number" value="BG-2025-001"></p>
                 <p>Ngày: <span id="quote-date"></span></p>
             </div>
         </header>
@@ -84,7 +86,7 @@
         <footer>
             <div class="notes">
                 <strong>Ghi chú:</strong>
-                <textarea rows="3">Báo giá có hiệu lực trong vòng 30 ngày.</textarea>
+                <textarea id="notes-area" rows="3"></textarea>
             </div>
             <div class="signature">
                 <p><strong>Người lập báo giá</strong></p>
