@@ -1,6 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Global State ---
     let quotes = [];
     let activeQuoteId = null;
+    let currentUser = null;
 
     // --- DOM Elements ---
     const tabsContainer = document.getElementById('tabs-container');
@@ -8,59 +10,160 @@ document.addEventListener('DOMContentLoaded', function() {
     const addRowBtn = document.getElementById('add-row');
     const addCategoryBtn = document.getElementById('add-category');
     const vatRateInput = document.getElementById('vat-rate');
+    const userProfileElement = document.getElementById('user-profile');
+    const userNameElement = document.getElementById('user-name');
+    const userPicElement = document.getElementById('user-pic');
+    const logoutBtn = document.getElementById('logout-btn');
+    const loginOverlay = document.getElementById('login-overlay');
 
     // --- Main Initialization ---
     function init() {
+        // App waits for Google Sign-In. The GSI library automatically
+        // renders the button and calls handleCredentialResponse on success.
+        logoutBtn.addEventListener('click', logout);
+        document.body.classList.add('app-hidden');
+    }
+    
+    // --- Google Sign-In & App Lifecycle ---
+    function jwt_decode(token) {
+        try {
+            return JSON.parse(atob(token.split('.')[1]));
+        } catch (e) {
+            console.error("Failed to decode JWT", e);
+            return null;
+        }
+    }
+
+    window.handleCredentialResponse = function(response) {
+        const decoded = jwt_decode(response.credential);
+        if (!decoded) {
+            alert("Đăng nhập thất bại. Vui lòng thử lại.");
+            return;
+        }
+        currentUser = {
+            id: decoded.sub,
+            name: decoded.name,
+            picture: decoded.picture
+        };
+        startApp();
+    };
+
+    function startApp() {
+        // Hide login, show main app
+        document.body.classList.remove('app-hidden');
+        loginOverlay.style.display = 'none';
+        userProfileElement.style.display = 'flex';
+
+        // Update user profile UI
+        userNameElement.textContent = currentUser.name;
+        userPicElement.src = currentUser.picture;
+        userPicElement.alt = `Avatar of ${currentUser.name}`;
+
+        // Run the original app setup logic
         loadState();
         renderTabs();
-        if (activeQuoteId) {
+        if (activeQuoteId && quotes.some(q => q.id == activeQuoteId)) {
             renderQuote(activeQuoteId);
+        } else if (quotes.length > 0) {
+            // if no active quote, but quotes exist, activate the first one
+            switchQuote(quotes[0].id);
         }
         setupGlobalEventListeners();
         updateDate();
     }
     
-    function updateDate() {
-        const today = new Date();
-        document.getElementById('quote-date').textContent = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+    function resetUI() {
+        document.body.classList.add('app-hidden');
+        loginOverlay.style.display = 'flex';
+        userProfileElement.style.display = 'none';
+
+        // Clear table
+        tableBody.innerHTML = '';
+        document.getElementById('subtotal').textContent = '0';
+        document.getElementById('tax').textContent = '0';
+        document.getElementById('grand-total').querySelector('strong').textContent = '0';
+
+        // Clear tabs
+        tabsContainer.innerHTML = '';
+        
+        // Clear forms
+        const form = document.querySelector('.page');
+        if (form) {
+            form.querySelectorAll('input, textarea').forEach(input => {
+                if(input.type !== 'button' && input.type !== 'submit' && input.type !== 'number') {
+                     input.value = '';
+                }
+            });
+             document.getElementById('vat-rate').value = 10;
+        }
+
+        updateDate(); // Reset date to current
+    }
+
+
+    function logout() {
+        // This function is for Google's "One Tap" prompt. Disabling it means
+        // the user won't be automatically signed-in on their next visit.
+        if (window.google && google.accounts && google.accounts.id) {
+            google.accounts.id.disableAutoSelect();
+        }
+
+        currentUser = null;
+        quotes = [];
+        activeQuoteId = null;
+
+        resetUI();
     }
 
     // --- State Management (Save/Load) ---
+    function getStorageKey(baseKey) {
+        if (!currentUser) return null;
+        return `${baseKey}_${currentUser.id}`;
+    }
+
     function loadState() {
-        const savedQuotes = JSON.parse(localStorage.getItem('savedQuotes'));
-        const savedActiveId = localStorage.getItem('activeQuoteId');
+        const savedQuotesKey = getStorageKey('savedQuotes');
+        const activeIdKey = getStorageKey('activeQuoteId');
+        
+        if (!savedQuotesKey || !activeIdKey) return;
+
+        const savedQuotes = JSON.parse(localStorage.getItem(savedQuotesKey));
+        const savedActiveId = localStorage.getItem(activeIdKey);
         
         if (savedQuotes && savedQuotes.length > 0) {
             quotes = savedQuotes;
             activeQuoteId = savedActiveId && quotes.some(q => q.id == savedActiveId) ? savedActiveId : quotes[0].id;
         } else {
-            // Create a default first quote
+            // Create a default first quote for new users
             const newQuote = createNewQuoteObject('Báo giá đầu tiên');
             quotes = [newQuote];
             activeQuoteId = newQuote.id;
         }
     }
     
-    // Debounce function to limit how often saveState is called
-    function debounce(func, delay) {
+    const debounce = (func, delay) => {
         let timeout;
-        return function(...args) {
+        return (...args) => {
             clearTimeout(timeout);
             timeout = setTimeout(() => func.apply(this, args), delay);
         };
-    }
+    };
 
     const debouncedSave = debounce(() => saveState(), 500);
 
     function saveState() {
+        const savedQuotesKey = getStorageKey('savedQuotes');
+        const activeIdKey = getStorageKey('activeQuoteId');
+        
+        if (!savedQuotesKey || !activeIdKey || !currentUser) return;
+
         const activeQuoteIndex = quotes.findIndex(q => q.id == activeQuoteId);
         if (activeQuoteIndex > -1) {
             quotes[activeQuoteIndex] = collectQuoteDataFromDOM();
         }
-        localStorage.setItem('savedQuotes', JSON.stringify(quotes));
-        localStorage.setItem('activeQuoteId', activeQuoteId);
-        // Also update the tab name in case it changed via input
-        renderTabs();
+        localStorage.setItem(savedQuotesKey, JSON.stringify(quotes));
+        localStorage.setItem(activeIdKey, activeQuoteId);
+        renderTabs(); // Also update the tab name in case it changed via input
     }
     
     function collectQuoteDataFromDOM() {
@@ -90,7 +193,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         return {
             id: activeQuoteId,
-            name: currentQuote.name, // Name is managed via tab editing
+            name: currentQuote.name,
             company: {
                 name: document.getElementById('company-name').value,
                 address: document.getElementById('company-address').value,
@@ -128,27 +231,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Recreate table
         tableBody.innerHTML = '';
-        quote.tableData.forEach(item => {
-            if (item.type === 'category') {
-                const row = createCategoryRowDOM();
-                row.querySelector('input').value = item.name;
-                tableBody.appendChild(row);
-            } else if (item.type === 'item') {
-                const row = createItemRowDOM();
-                row.querySelector('.item-name').value = item.name;
-                row.querySelector('.item-spec').value = item.spec;
-                row.querySelector('td:nth-child(3) input').value = item.unit;
-                row.querySelector('.dim-d').value = item.dimD;
-                row.querySelector('.dim-s').value = item.dimS;
-                row.querySelector('.dim-c').value = item.dimC;
-                row.querySelector('.quantity').value = item.quantity;
-                const priceInput = row.querySelector('.price');
-                priceInput.value = item.price;
-                formatPriceInput(priceInput); // Format the loaded price
-                tableBody.appendChild(row);
-            }
-        });
-
+        if (quote.tableData) {
+            quote.tableData.forEach(item => {
+                if (item.type === 'category') {
+                    const row = createCategoryRowDOM();
+                    row.querySelector('input').value = item.name;
+                    tableBody.appendChild(row);
+                } else if (item.type === 'item') {
+                    const row = createItemRowDOM();
+                    row.querySelector('.item-name').value = item.name;
+                    row.querySelector('.item-spec').value = item.spec;
+                    row.querySelector('td:nth-child(3) input').value = item.unit;
+                    row.querySelector('.dim-d').value = item.dimD;
+                    row.querySelector('.dim-s').value = item.dimS;
+                    row.querySelector('.dim-c').value = item.dimC;
+                    row.querySelector('.quantity').value = item.quantity;
+                    const priceInput = row.querySelector('.price');
+                    priceInput.value = item.price;
+                    formatPriceInput(priceInput);
+                    tableBody.appendChild(row);
+                }
+            });
+        }
+        
         updateRowNumbers();
         updateTotals();
     }
@@ -172,7 +277,6 @@ document.addEventListener('DOMContentLoaded', function() {
             closeBtn.innerHTML = '&times;';
             tab.appendChild(closeBtn);
 
-            // Events for tab
             tabName.addEventListener('click', () => switchQuote(quote.id));
             tabName.addEventListener('dblclick', () => editTabName(tabName, quote.id));
             closeBtn.addEventListener('click', (e) => {
@@ -192,6 +296,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // --- Core Logic Functions ---
+    function updateDate() {
+        const today = new Date();
+        document.getElementById('quote-date').textContent = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+    }
+
     function formatCurrency(num) {
         return num.toLocaleString('vi-VN');
     }
@@ -316,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- Event Handlers ---
     function setupGlobalEventListeners() {
-        // Any change on the page should trigger a save
         document.querySelector('.page').addEventListener('input', (e) => {
             if (e.target.classList.contains('price')) {
                  formatPriceInput(e.target);
@@ -374,9 +482,9 @@ document.addEventListener('DOMContentLoaded', function() {
         if (quoteId == activeQuoteId) return;
         saveState(); // Save current before switching
         activeQuoteId = quoteId;
-        renderQuote(quoteId);
+        renderQuote(activeQuoteId);
         renderTabs(); // To update active state
-        localStorage.setItem('activeQuoteId', activeQuoteId);
+        localStorage.setItem(getStorageKey('activeQuoteId'), activeQuoteId);
     }
     
     function addNewQuote() {

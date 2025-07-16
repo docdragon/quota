@@ -8,7 +8,14 @@
 </head>
 <body>
 
-    <div id="tabs-container" class="no-print"></div>
+    <div class="header-bar no-print">
+        <div id="tabs-container"></div>
+        <div id="user-profile">
+            <img id="user-pic" src="" alt="User avatar">
+            <span id="user-name"></span>
+            <button id="logout-btn">Đăng xuất</button>
+        </div>
+    </div>
 
     <div class="page">
         <header>
@@ -99,6 +106,30 @@
         <button onclick="window.print()">Xuất PDF / In</button>
     </div>
 
+    <div id="login-overlay" class="no-print">
+        <div id="login-box">
+            <h2>Chào mừng!</h2>
+            <p>Đăng nhập bằng tài khoản Google để lưu và quản lý báo giá của bạn trên trình duyệt này.</p>
+            <!-- NOTE: This application requires a Google Client ID to function. -->
+            <div id="g_id_onload"
+                 data-client_id="YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com"
+                 data-context="signin"
+                 data-ux_mode="popup"
+                 data-callback="handleCredentialResponse"
+                 data-auto_prompt="false">
+            </div>
+            <div class="g_id_signin"
+                 data-type="standard"
+                 data-shape="rectangular"
+                 data-theme="filled_blue"
+                 data-text="signin_with"
+                 data-size="large"
+                 data-logo_alignment="left">
+            </div>
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <script src="script.js"></script>
 </body>
 </html>
