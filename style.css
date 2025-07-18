@@ -151,9 +151,15 @@ body {
 
 /* --- Editor View: Page & Layout --- */
 .page {
-    width: 210mm; min-height: 297mm; padding: 20mm; margin: 0 auto;
-    background: var(--white); box-shadow: var(--shadow);
-    box-sizing: border-box; border-radius: var(--border-radius);
+    width: 100%;
+    max-width: 1140px; /* Increased width to prevent content overlap */
+    min-height: 297mm;
+    padding: 20mm;
+    margin: 0 auto;
+    background: var(--white);
+    box-shadow: var(--shadow);
+    box-sizing: border-box;
+    border-radius: var(--border-radius);
 }
 .quote-header {
     display: flex; justify-content: space-between; align-items: flex-start;
