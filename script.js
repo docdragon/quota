@@ -10,17 +10,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // Main Navigation & Views
     const navEditor = document.getElementById('nav-editor');
     const navList = document.getElementById('nav-list');
+    const saveQuoteBtn = document.getElementById('save-quote-btn');
     const editorView = document.getElementById('editor-view');
     const listView = document.getElementById('list-view');
-    
+
     // Editor View
-    const tabsContainer = document.getElementById('tabs-container');
+    const quoteNameInput = document.getElementById('quote-name-input');
     const tableBody = document.querySelector('#quote-table tbody');
     const addRowBtn = document.getElementById('add-row');
     const addCategoryBtn = document.getElementById('add-category');
     const vatRateInput = document.getElementById('vat-rate');
     const saveIndicator = document.getElementById('save-indicator');
-    
+
     // List View
     const savedQuotesContainer = document.getElementById('saved-quotes-container');
     const searchQuotesInput = document.getElementById('search-quotes-input');
@@ -31,74 +32,25 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmMessage = document.getElementById('confirm-message');
     const confirmOkBtn = document.getElementById('confirm-ok-btn');
     const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
-    
-    // --- State Management (Save/Load) ---
-    function getStorageKey(baseKey) {
-        return baseKey; // Data is stored locally per browser
-    }
 
+    // --- State Management (Save/Load) ---
     function loadState() {
-        const savedQuotesKey = getStorageKey('savedQuotes');
-        const activeIdKey = getStorageKey('activeQuoteId');
-        
-        const savedQuotes = JSON.parse(localStorage.getItem(savedQuotesKey));
-        
+        const savedQuotes = JSON.parse(localStorage.getItem('savedQuotes'));
+
         if (savedQuotes && savedQuotes.length > 0) {
-            quotes = savedQuotes; // Load all saved quotes into memory
-            const savedActiveId = localStorage.getItem(activeIdKey);
-            const activeIdNum = savedActiveId ? Number(savedActiveId) : null;
-            const activeQuoteExists = quotes.some(q => q.id === activeIdNum);
-            
-            if (activeIdNum && activeQuoteExists) {
-                activeQuoteId = activeIdNum;
-            } else {
-                activeQuoteId = quotes[0].id; // Default to the first quote
-            }
+            quotes = savedQuotes;
+            // Sort by most recently modified to load the latest one
+            quotes.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+            activeQuoteId = quotes[0].id;
         } else {
-            // If no quotes exist, create a fresh one
-            const newQuote = createNewQuoteObject('Báo giá đầu tiên');
-            quotes = [newQuote];
-            activeQuoteId = newQuote.id;
-            saveState(false); // Save the very first quote without showing indicator
+            // If no quotes exist, create a fresh one and add it to the list
+            addNewQuote(false); // Don't save immediately
         }
     }
-    
-    const debounce = (func, delay) => {
-        let timeout;
-        const debounced = (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
-        };
-        debounced.flush = () => {
-             clearTimeout(timeout);
-             func();
-        };
-        return debounced;
-    };
-
-    const debouncedSave = debounce(() => saveState(), 500);
 
     function saveState(showIndicator = true) {
-        if (activeQuoteId === null) return;
+        localStorage.setItem('savedQuotes', JSON.stringify(quotes));
 
-        const savedQuotesKey = getStorageKey('savedQuotes');
-        const activeIdKey = getStorageKey('activeQuoteId');
-
-        const activeQuoteData = collectQuoteDataFromDOM();
-        activeQuoteData.lastModified = new Date().toISOString();
-        
-        const activeQuoteIndex = quotes.findIndex(q => q.id === activeQuoteId);
-        if (activeQuoteIndex > -1) {
-            quotes[activeQuoteIndex] = activeQuoteData;
-        } else {
-            quotes.push(activeQuoteData);
-        }
-
-        localStorage.setItem(savedQuotesKey, JSON.stringify(quotes));
-        localStorage.setItem(activeIdKey, activeQuoteId.toString());
-        
-        renderTabs(); // Re-render tabs in case the name changed
-        
         if (showIndicator) {
             saveIndicator.classList.add('show');
             clearTimeout(indicatorTimeout);
@@ -108,6 +60,31 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
+    function handleSaveQuote() {
+        if (!activeQuoteId) return;
+
+        const quoteIndex = quotes.findIndex(q => q.id === activeQuoteId);
+        if (quoteIndex === -1) {
+             console.error("Active quote not found in quotes array. Cannot save.");
+             return;
+        }
+
+        const domData = collectQuoteDataFromDOM();
+
+        // Update the quote object in the main array
+        quotes[quoteIndex] = {
+            ...quotes[quoteIndex], // Keeps the original ID
+            ...domData,
+            lastModified: new Date().toISOString()
+        };
+        
+        saveState(true);
+        // If list view is visible, refresh it
+        if (listView.style.display === 'block') {
+            renderSavedQuotes(quotes);
+        }
+    }
+
     function collectQuoteDataFromDOM() {
         const tableData = [];
         tableBody.querySelectorAll('tr').forEach(row => {
@@ -131,11 +108,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        const currentQuote = quotes.find(q => q.id === activeQuoteId) || {};
-
         return {
-            id: activeQuoteId,
-            name: currentQuote.name || 'Báo giá mới',
+            name: quoteNameInput.value,
             company: {
                 name: document.getElementById('company-name').value,
                 address: document.getElementById('company-address').value,
@@ -153,7 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tableData: tableData
         };
     }
-    
+
     // --- View Management ---
     function showEditorView() {
         editorView.style.display = 'block';
@@ -163,8 +137,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showListView() {
-        renderSavedQuotes(quotes); // Re-render the list every time it's shown
-        searchQuotesInput.value = ''; // Clear search
+        handleSaveQuote(); // Auto-save when switching to list view
+        renderSavedQuotes(quotes);
+        searchQuotesInput.value = '';
         editorView.style.display = 'none';
         listView.style.display = 'block';
         navEditor.classList.remove('active');
@@ -175,7 +150,8 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderQuote(quoteId) {
         const quote = quotes.find(q => q.id === quoteId);
         if (!quote) return;
-        
+
+        quoteNameInput.value = quote.name;
         document.getElementById('company-name').value = quote.company.name;
         document.getElementById('company-address').value = quote.company.address;
         document.getElementById('company-contact').value = quote.company.contact;
@@ -197,7 +173,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 } else if (item.type === 'item') {
                     const row = createItemRowDOM();
                     row.querySelector('.item-name').value = item.name;
-                    row.querySelector('.item-spec').value = item.spec;
+                    const specTextarea = row.querySelector('.item-spec');
+                    specTextarea.value = item.spec;
+                    // Adjust height after content is set
+                    setTimeout(() => {
+                        specTextarea.style.height = 'auto';
+                        specTextarea.style.height = (specTextarea.scrollHeight) + 'px';
+                    }, 0);
+
                     row.querySelector('td[data-label="Đơn vị"] input').value = item.unit;
                     row.querySelector('.dim-d').value = item.dimD;
                     row.querySelector('.dim-s').value = item.dimS;
@@ -210,50 +193,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
         }
-        
+
         updateRowNumbers();
         updateTotals();
     }
 
-    function renderTabs() {
-        tabsContainer.innerHTML = '';
-        quotes.forEach(quote => {
-            const tab = document.createElement('div');
-            tab.className = 'tab';
-            tab.dataset.id = quote.id;
-            if (quote.id === activeQuoteId) {
-                tab.classList.add('active');
-            }
-
-            const tabName = document.createElement('span');
-            tabName.textContent = quote.name;
-            tab.appendChild(tabName);
-            
-            const closeBtn = document.createElement('button');
-            closeBtn.className = 'tab-close-btn';
-            closeBtn.innerHTML = '&times;';
-            closeBtn.setAttribute('aria-label', `Đóng báo giá ${quote.name}`);
-            tab.appendChild(closeBtn);
-
-            tabName.addEventListener('click', () => switchQuote(quote.id));
-            tabName.addEventListener('dblclick', () => editTabName(tabName, quote.id));
-            closeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                deleteQuote(quote.id);
-            });
-
-            tabsContainer.appendChild(tab);
-        });
-        
-        const addTabBtn = document.createElement('button');
-        addTabBtn.id = 'add-tab-btn';
-        addTabBtn.textContent = '+';
-        addTabBtn.title = 'Tạo báo giá mới';
-        addTabBtn.setAttribute('aria-label', 'Tạo báo giá mới');
-        addTabBtn.addEventListener('click', addNewQuote);
-        tabsContainer.appendChild(addTabBtn);
-    }
-    
     // --- Core Logic Functions ---
     function updateDate() {
         const today = new Date();
@@ -288,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         <span>x</span>
                         <input type="number" class="dimension dim-c" value="0" min="0" step="0.01" title="Cao (m)" placeholder="Cao">
                     </div>
-                    <input type="text" class="item-spec" placeholder="Quy cách, mô tả chi tiết...">
+                    <textarea class="item-spec" placeholder="Quy cách, mô tả chi tiết..." rows="1"></textarea>
                 </div>
             </td>
             <td data-label="Đơn vị"><input type="text" value="cái"></td>
@@ -298,9 +242,14 @@ document.addEventListener('DOMContentLoaded', function() {
             <td data-label="Thành tiền" class="line-total text-right">0</td>
             <td class="actions"><button class="delete-btn" title="Xóa dòng" aria-label="Xóa dòng">&times;</button></td>
         `;
+        const textarea = row.querySelector('.item-spec');
+        textarea.addEventListener('input', () => {
+            textarea.style.height = 'auto';
+            textarea.style.height = (textarea.scrollHeight) + 'px';
+        });
         return row;
     }
-    
+
     function createCategoryRowDOM() {
         const row = document.createElement('tr');
         row.className = 'category-header';
@@ -312,12 +261,13 @@ document.addEventListener('DOMContentLoaded', function() {
         return row;
     }
 
-    function createNewQuoteObject(name) {
-        const defaultName = name || `Báo giá #${quotes.length + 1}`;
+    function createNewQuoteObject() {
         const newId = Date.now();
+        const date = new Date(newId);
+        const name = `Báo giá mới - ${date.getHours()}:${date.getMinutes()}:${date.getSeconds()}`;
         return {
             id: newId,
-            name: defaultName,
+            name: name,
             lastModified: new Date().toISOString(),
             company: { name: 'Tên Công Ty Của Bạn', address: 'Địa chỉ: 123 Đường ABC, Phường X, Quận Y, TP. Z', contact: 'Điện thoại: 0987 654 321 | Email: info@tencongty.com', bank: '' },
             client: { name: '', phone: '', address: ''},
@@ -333,40 +283,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function updateTotals() {
         let grandSubtotal = 0;
-        let currentCategorySubtotal = 0;
-        let currentCategoryInput = null;
+        tableBody.querySelectorAll('tr.item-row').forEach(row => {
+            const length = parseFloat(row.querySelector('.dim-d').value) || 0;
+            const height = parseFloat(row.querySelector('.dim-c').value) || 0;
+            const volume = length * height;
+            row.querySelector('.volume').textContent = volume.toFixed(2);
+            
+            const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
+            const priceValue = row.querySelector('.price').value || '0';
+            const price = parseFloat(priceValue.replace(/\./g, '')) || 0;
 
-        tableBody.querySelectorAll('tr').forEach(row => {
-            if (row.classList.contains('category-header')) {
-                if (currentCategoryInput) {
-                    currentCategoryInput.placeholder = `${currentCategoryInput.dataset.defaultPlaceholder} (${formatCurrency(currentCategorySubtotal)})`;
-                }
-                currentCategorySubtotal = 0;
-                currentCategoryInput = row.querySelector('input');
-                if(currentCategoryInput && !currentCategoryInput.dataset.defaultPlaceholder) {
-                   currentCategoryInput.dataset.defaultPlaceholder = currentCategoryInput.placeholder;
-                }
-            } else if (row.classList.contains('item-row')) {
-                const length = parseFloat(row.querySelector('.dim-d').value) || 0;
-                const height = parseFloat(row.querySelector('.dim-c').value) || 0;
-                const volume = length * height;
-                row.querySelector('.volume').textContent = volume.toFixed(2);
-                
-                const quantity = parseFloat(row.querySelector('.quantity').value) || 0;
-                const priceValue = row.querySelector('.price').value || '0';
-                const price = parseFloat(priceValue.replace(/\./g, '')) || 0;
-
-                const lineTotal = quantity * price;
-                row.querySelector('.line-total').textContent = formatCurrency(lineTotal);
-                
-                grandSubtotal += lineTotal;
-                currentCategorySubtotal += lineTotal;
-            }
+            const lineTotal = quantity * price;
+            row.querySelector('.line-total').textContent = formatCurrency(lineTotal);
+            
+            grandSubtotal += lineTotal;
         });
-
-        if (currentCategoryInput) {
-             currentCategoryInput.placeholder = `${currentCategoryInput.dataset.defaultPlaceholder} (${formatCurrency(currentCategorySubtotal)})`;
-        }
 
         const taxRate = (parseFloat(vatRateInput.value) || 0) / 100;
         const tax = grandSubtotal * taxRate;
@@ -376,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('tax').textContent = formatCurrency(tax);
         document.getElementById('grand-total').textContent = formatCurrency(grandTotal);
     }
-    
+
     function formatPriceInput(input) {
          let numericString = input.value.replace(/\D/g, '');
         if (numericString) {
@@ -386,20 +317,20 @@ document.addEventListener('DOMContentLoaded', function() {
             input.value = '';
         }
     }
-    
+
     // --- Event Handlers ---
     function setupGlobalEventListeners() {
         // Main Navigation
         navEditor.addEventListener('click', showEditorView);
         navList.addEventListener('click', showListView);
+        saveQuoteBtn.addEventListener('click', handleSaveQuote);
 
-        // Editor View
+        // Editor View - Update totals on any input change
         editorView.addEventListener('input', (e) => {
             if (e.target.classList.contains('price')) {
                  formatPriceInput(e.target);
             }
             updateTotals();
-            debouncedSave();
         });
 
         addRowBtn.addEventListener('click', () => {
@@ -407,14 +338,12 @@ document.addEventListener('DOMContentLoaded', function() {
             tableBody.appendChild(row);
             updateRowNumbers();
             updateTotals();
-            debouncedSave();
         });
 
         addCategoryBtn.addEventListener('click', () => {
             const row = createCategoryRowDOM();
             tableBody.appendChild(row);
             updateTotals();
-            debouncedSave();
         });
 
         tableBody.addEventListener('click', function(e) {
@@ -432,7 +361,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 rowToDelete.remove();
                 updateRowNumbers();
                 updateTotals();
-                debouncedSave();
             }
         });
 
@@ -459,31 +387,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Tab Actions ---
+    // --- Quote Actions ---
     function switchQuote(quoteId) {
-        if (quoteId === activeQuoteId) return;
-        if(activeQuoteId !== null) debouncedSave.flush();
+        if (quoteId === activeQuoteId) {
+             showEditorView();
+             return;
+        };
         
         activeQuoteId = quoteId;
         renderQuote(activeQuoteId);
-        renderTabs(); 
-        localStorage.setItem(getStorageKey('activeQuoteId'), activeQuoteId.toString());
+        showEditorView();
     }
-    
-    function addNewQuote() {
-        if(activeQuoteId !== null) debouncedSave.flush();
+
+    function addNewQuote(doSave = true) {
         const newQuote = createNewQuoteObject();
-        quotes.push(newQuote);
-        localStorage.setItem(getStorageKey('savedQuotes'), JSON.stringify(quotes));
-        switchQuote(newQuote.id);
+        quotes.unshift(newQuote); // Add to the beginning of the array
+        activeQuoteId = newQuote.id;
+        renderQuote(activeQuoteId);
+        if (doSave) {
+            saveState(false); // Save without showing indicator
+        }
     }
 
     function deleteQuote(quoteId, fromListView = false) {
-        if (quotes.length <= 1) {
-            alert("Không thể xóa báo giá cuối cùng.");
-            return;
-        }
-
         const quoteToDelete = quotes.find(q => q.id === quoteId);
         if (!quoteToDelete) return;
 
@@ -491,13 +417,17 @@ document.addEventListener('DOMContentLoaded', function() {
             `Bạn có chắc chắn muốn xóa vĩnh viễn báo giá "${quoteToDelete.name}" không?`,
             () => {
                 quotes = quotes.filter(q => q.id !== quoteId);
-                localStorage.setItem(getStorageKey('savedQuotes'), JSON.stringify(quotes));
+                saveState(false);
 
                 if (activeQuoteId === quoteId) {
-                    const newActiveId = quotes[0].id;
-                    switchQuote(newActiveId);
-                } else if (!fromListView) {
-                    renderTabs(); // Just re-render tabs if a background tab was closed
+                    if (quotes.length > 0) {
+                        // Load the most recent quote
+                        quotes.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+                        switchQuote(quotes[0].id);
+                    } else {
+                        // No quotes left, create a new one
+                        addNewQuote();
+                    }
                 }
                 
                 if (fromListView) {
@@ -506,38 +436,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         );
     }
-
-    function editTabName(tabNameElement, quoteId) {
-        const currentName = tabNameElement.textContent;
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.value = currentName;
-        input.className = 'tab-name-edit';
-        
-        tabNameElement.replaceWith(input);
-        input.focus();
-        input.select();
-
-        const saveNewName = () => {
-            const newName = input.value.trim() || currentName;
-            const quote = quotes.find(q => q.id === quoteId);
-            if (quote) {
-                quote.name = newName;
-            }
-            input.replaceWith(tabNameElement);
-            debouncedSave(); // This will save the whole quote object with the new name
-        };
-
-        input.addEventListener('blur', saveNewName);
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') input.blur();
-            else if (e.key === 'Escape') {
-                input.value = currentName;
-                input.blur();
-            }
-        });
-    }
-
+    
     // --- Quote List View ---
     function showConfirmModal(message, onConfirm) {
         confirmMessage.textContent = message;
@@ -553,7 +452,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function renderSavedQuotes(quotesToRender) {
         savedQuotesContainer.innerHTML = '';
         if (!quotesToRender || quotesToRender.length === 0) {
-            savedQuotesContainer.innerHTML = '<p class="empty-list-message">Không có báo giá nào được tìm thấy. Hãy tạo một báo giá mới!</p>';
+            savedQuotesContainer.innerHTML = '<p class="empty-list-message">Không có báo giá nào được tạo. Hãy tạo một báo giá mới!</p>';
             return;
         }
 
@@ -601,7 +500,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (target.matches('.btn-open')) {
             switchQuote(quoteId);
-            showEditorView();
         } else if (target.matches('.btn-delete')) {
             deleteQuote(quoteId, true);
         }
@@ -609,7 +507,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // --- Main Initialization ---
     loadState();
-    renderTabs();
     if (activeQuoteId) {
         renderQuote(activeQuoteId);
     }

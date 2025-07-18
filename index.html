@@ -17,6 +17,7 @@
             <a href="#" class="logo">Báo Giá Pro</a>
             <nav class="main-nav">
                 <button id="nav-editor" class="nav-btn active">Soạn Thảo</button>
+                <button id="save-quote-btn" class="nav-btn btn-save">Lưu Báo Giá</button>
                 <button id="nav-list" class="nav-btn">Danh Sách</button>
             </nav>
         </div>
@@ -24,8 +25,9 @@
 
     <main id="app-container">
         <div id="editor-view">
-            <div class="header-bar no-print">
-                <div id="tabs-container"></div>
+            <div id="editor-title-bar" class="no-print">
+                <label for="quote-name-input">Tên báo giá:</label>
+                <input type="text" id="quote-name-input" placeholder="Ví dụ: Báo giá nội thất cho Anh A">
             </div>
 
             <div class="page">
