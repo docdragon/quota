@@ -1,8 +1,31 @@
+
+// Moved from inside DOMContentLoaded to be globally available.
+function jwt_decode(token) {
+    try {
+        return JSON.parse(atob(token.split('.')[1]));
+    } catch (e) {
+        console.error("Failed to decode JWT", e);
+        return null;
+    }
+}
+
+// Global callback for Google Sign-In.
+// This function is guaranteed to exist when the GSI library loads.
+window.handleCredentialResponse = function(response) {
+    // Dispatch a custom event with the credential response.
+    // The main application logic, which runs after DOMContentLoaded, will listen for this.
+    const event = new CustomEvent('google-signin-success', { detail: response });
+    document.dispatchEvent(event);
+};
+
+
 document.addEventListener('DOMContentLoaded', function() {
     // --- Global State ---
     let quotes = [];
     let activeQuoteId = null;
     let currentUser = null;
+    let indicatorTimeout;
+    let confirmCallback = null;
 
     // --- DOM Elements ---
     const tabsContainer = document.getElementById('tabs-container');
@@ -10,62 +33,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const addRowBtn = document.getElementById('add-row');
     const addCategoryBtn = document.getElementById('add-category');
     const vatRateInput = document.getElementById('vat-rate');
+    const headerRightSide = document.getElementById('header-right-side');
     const userProfileElement = document.getElementById('user-profile');
     const userNameElement = document.getElementById('user-name');
     const userPicElement = document.getElementById('user-pic');
     const logoutBtn = document.getElementById('logout-btn');
     const loginOverlay = document.getElementById('login-overlay');
+    const quoteListBtn = document.getElementById('quote-list-btn');
+    const quoteListModal = document.getElementById('quote-list-modal');
+    const savedQuotesList = document.getElementById('saved-quotes-list');
+    const modalCloseBtn = document.getElementById('modal-close-btn');
+    const saveIndicator = document.getElementById('save-indicator');
+    const confirmModal = document.getElementById('confirm-modal');
+    const confirmMessage = document.getElementById('confirm-message');
+    const confirmOkBtn = document.getElementById('confirm-ok-btn');
+    const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
 
     // --- Main Initialization ---
     function init() {
-        // App waits for Google Sign-In. The GSI library automatically
-        // renders the button and calls handleCredentialResponse on success.
         logoutBtn.addEventListener('click', logout);
         document.body.classList.add('app-hidden');
+        
+        // Listen for the custom sign-in event dispatched by the global callback.
+        document.addEventListener('google-signin-success', (e) => {
+            const response = e.detail;
+            const decoded = jwt_decode(response.credential); // jwt_decode is global
+            if (!decoded) {
+                alert("Đăng nhập thất bại. Vui lòng thử lại.");
+                return;
+            }
+            currentUser = {
+                id: decoded.sub,
+                name: decoded.name,
+                picture: decoded.picture
+            };
+            startApp();
+        });
     }
     
     // --- Google Sign-In & App Lifecycle ---
-    function jwt_decode(token) {
-        try {
-            return JSON.parse(atob(token.split('.')[1]));
-        } catch (e) {
-            console.error("Failed to decode JWT", e);
-            return null;
-        }
-    }
-
-    window.handleCredentialResponse = function(response) {
-        const decoded = jwt_decode(response.credential);
-        if (!decoded) {
-            alert("Đăng nhập thất bại. Vui lòng thử lại.");
-            return;
-        }
-        currentUser = {
-            id: decoded.sub,
-            name: decoded.name,
-            picture: decoded.picture
-        };
-        startApp();
-    };
-
     function startApp() {
-        // Hide login, show main app
         document.body.classList.remove('app-hidden');
         loginOverlay.style.display = 'none';
-        userProfileElement.style.display = 'flex';
+        headerRightSide.style.display = 'flex';
 
-        // Update user profile UI
         userNameElement.textContent = currentUser.name;
         userPicElement.src = currentUser.picture;
         userPicElement.alt = `Avatar of ${currentUser.name}`;
 
-        // Run the original app setup logic
         loadState();
         renderTabs();
-        if (activeQuoteId && quotes.some(q => q.id == activeQuoteId)) {
+        if (activeQuoteId && quotes.some(q => q.id === activeQuoteId)) {
             renderQuote(activeQuoteId);
         } else if (quotes.length > 0) {
-            // if no active quote, but quotes exist, activate the first one
             switchQuote(quotes[0].id);
         }
         setupGlobalEventListeners();
@@ -75,18 +95,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function resetUI() {
         document.body.classList.add('app-hidden');
         loginOverlay.style.display = 'flex';
-        userProfileElement.style.display = 'none';
+        headerRightSide.style.display = 'none';
 
-        // Clear table
         tableBody.innerHTML = '';
         document.getElementById('subtotal').textContent = '0';
         document.getElementById('tax').textContent = '0';
         document.getElementById('grand-total').querySelector('strong').textContent = '0';
 
-        // Clear tabs
         tabsContainer.innerHTML = '';
         
-        // Clear forms
         const form = document.querySelector('.page');
         if (form) {
             form.querySelectorAll('input, textarea').forEach(input => {
@@ -97,13 +114,10 @@ document.addEventListener('DOMContentLoaded', function() {
              document.getElementById('vat-rate').value = 10;
         }
 
-        updateDate(); // Reset date to current
+        updateDate();
     }
 
-
     function logout() {
-        // This function is for Google's "One Tap" prompt. Disabling it means
-        // the user won't be automatically signed-in on their next visit.
         if (window.google && google.accounts && google.accounts.id) {
             google.accounts.id.disableAutoSelect();
         }
@@ -131,13 +145,15 @@ document.addEventListener('DOMContentLoaded', function() {
         const savedActiveId = localStorage.getItem(activeIdKey);
         
         if (savedQuotes && savedQuotes.length > 0) {
-            quotes = savedQuotes;
-            activeQuoteId = savedActiveId && quotes.some(q => q.id == savedActiveId) ? savedActiveId : quotes[0].id;
+             const activeIdNum = savedActiveId ? Number(savedActiveId) : null;
+             const activeQuote = savedQuotes.find(q => q.id === activeIdNum);
+             quotes = [activeQuote || savedQuotes[0]];
+             activeQuoteId = quotes[0].id;
         } else {
-            // Create a default first quote for new users
             const newQuote = createNewQuoteObject('Báo giá đầu tiên');
             quotes = [newQuote];
             activeQuoteId = newQuote.id;
+            saveState(); // Save the very first quote
         }
     }
     
@@ -154,16 +170,33 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveState() {
         const savedQuotesKey = getStorageKey('savedQuotes');
         const activeIdKey = getStorageKey('activeQuoteId');
-        
         if (!savedQuotesKey || !activeIdKey || !currentUser) return;
 
-        const activeQuoteIndex = quotes.findIndex(q => q.id == activeQuoteId);
-        if (activeQuoteIndex > -1) {
-            quotes[activeQuoteIndex] = collectQuoteDataFromDOM();
+        let allQuotes = JSON.parse(localStorage.getItem(savedQuotesKey) || '[]');
+        const activeQuoteData = collectQuoteDataFromDOM();
+        activeQuoteData.lastModified = new Date().toISOString();
+        
+        const activeQuoteIndexInStorage = allQuotes.findIndex(q => q.id === activeQuoteId);
+        if (activeQuoteIndexInStorage > -1) {
+            allQuotes[activeQuoteIndexInStorage] = activeQuoteData;
+        } else {
+            allQuotes.push(activeQuoteData);
         }
-        localStorage.setItem(savedQuotesKey, JSON.stringify(quotes));
-        localStorage.setItem(activeIdKey, activeQuoteId);
-        renderTabs(); // Also update the tab name in case it changed via input
+
+        const activeQuoteIndexInMemory = quotes.findIndex(q => q.id === activeQuoteId);
+         if (activeQuoteIndexInMemory > -1) {
+            quotes[activeQuoteIndexInMemory] = activeQuoteData;
+        }
+
+        localStorage.setItem(savedQuotesKey, JSON.stringify(allQuotes));
+        localStorage.setItem(activeIdKey, activeQuoteId.toString());
+        renderTabs();
+        
+        saveIndicator.classList.add('show');
+        clearTimeout(indicatorTimeout);
+        indicatorTimeout = setTimeout(() => {
+            saveIndicator.classList.remove('show');
+        }, 2000);
     }
     
     function collectQuoteDataFromDOM() {
@@ -179,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     type: 'item',
                     name: row.querySelector('.item-name').value,
                     spec: row.querySelector('.item-spec').value,
-                    unit: row.querySelector('td:nth-child(3) input').value,
+                    unit: row.querySelector('td[data-label="Đơn vị"] input').value,
                     dimD: row.querySelector('.dim-d').value,
                     dimS: row.querySelector('.dim-s').value,
                     dimC: row.querySelector('.dim-c').value,
@@ -189,11 +222,11 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        const currentQuote = quotes.find(q => q.id == activeQuoteId) || {};
+        const currentQuote = quotes.find(q => q.id === activeQuoteId) || {};
 
         return {
             id: activeQuoteId,
-            name: currentQuote.name,
+            name: document.getElementById('company-name').value === 'Tên Công Ty Của Bạn' ? (currentQuote.name || 'Báo giá mới') : document.querySelector('.tab.active span')?.textContent || 'Báo giá mới',
             company: {
                 name: document.getElementById('company-name').value,
                 address: document.getElementById('company-address').value,
@@ -214,10 +247,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- Rendering ---
     function renderQuote(quoteId) {
-        const quote = quotes.find(q => q.id == quoteId);
+        const quote = quotes.find(q => q.id === quoteId);
         if (!quote) return;
         
-        // Populate header and client info
         document.getElementById('company-name').value = quote.company.name;
         document.getElementById('company-address').value = quote.company.address;
         document.getElementById('company-contact').value = quote.company.contact;
@@ -229,7 +261,6 @@ document.addEventListener('DOMContentLoaded', function() {
         vatRateInput.value = quote.vatRate;
         document.getElementById('notes-area').value = quote.notes;
 
-        // Recreate table
         tableBody.innerHTML = '';
         if (quote.tableData) {
             quote.tableData.forEach(item => {
@@ -241,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     const row = createItemRowDOM();
                     row.querySelector('.item-name').value = item.name;
                     row.querySelector('.item-spec').value = item.spec;
-                    row.querySelector('td:nth-child(3) input').value = item.unit;
+                    row.querySelector('td[data-label="Đơn vị"] input').value = item.unit;
                     row.querySelector('.dim-d').value = item.dimD;
                     row.querySelector('.dim-s').value = item.dimS;
                     row.querySelector('.dim-c').value = item.dimC;
@@ -264,7 +295,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const tab = document.createElement('div');
             tab.className = 'tab';
             tab.dataset.id = quote.id;
-            if (quote.id == activeQuoteId) {
+            if (quote.id === activeQuoteId) {
                 tab.classList.add('active');
             }
 
@@ -275,6 +306,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const closeBtn = document.createElement('button');
             closeBtn.className = 'tab-close-btn';
             closeBtn.innerHTML = '&times;';
+            closeBtn.setAttribute('aria-label', `Đóng báo giá ${quote.name}`);
             tab.appendChild(closeBtn);
 
             tabName.addEventListener('click', () => switchQuote(quote.id));
@@ -291,6 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
         addTabBtn.id = 'add-tab-btn';
         addTabBtn.textContent = '+';
         addTabBtn.title = 'Tạo báo giá mới';
+        addTabBtn.setAttribute('aria-label', 'Tạo báo giá mới');
         addTabBtn.addEventListener('click', addNewQuote);
         tabsContainer.appendChild(addTabBtn);
     }
@@ -317,8 +350,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = document.createElement('tr');
         row.className = 'item-row';
         row.innerHTML = `
-            <td></td>
-            <td>
+            <td data-label="STT"></td>
+            <td data-label="Nội dung">
                 <div class="content-cell">
                     <input type="text" class="item-name" placeholder="Tên hạng mục, sản phẩm...">
                     <div class="dimensions-wrapper">
@@ -332,12 +365,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="text" class="item-spec" placeholder="Quy cách, mô tả chi tiết...">
                 </div>
             </td>
-            <td><input type="text" value="cái"></td>
-            <td class="volume text-right">0.00</td>
-            <td><input type="number" class="quantity" value="1" min="1"></td>
-            <td><input type="text" class="price" value="0" inputmode="numeric"></td>
-            <td class="line-total text-right">0</td>
-            <td class="actions"><button class="delete-btn" title="Xóa dòng">&times;</button></td>
+            <td data-label="Đơn vị"><input type="text" value="cái"></td>
+            <td data-label="KL (m²)" class="volume text-right">0.00</td>
+            <td data-label="SL"><input type="number" class="quantity" value="1" min="1"></td>
+            <td data-label="Đơn giá"><input type="text" class="price" value="0" inputmode="numeric"></td>
+            <td data-label="Thành tiền" class="line-total text-right">0</td>
+            <td class="actions"><button class="delete-btn" title="Xóa dòng" aria-label="Xóa dòng">&times;</button></td>
         `;
         return row;
     }
@@ -346,21 +379,24 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = document.createElement('tr');
         row.className = 'category-header';
         row.innerHTML = `
-            <td colspan="6"><input type="text" placeholder="Nhập tên danh mục..."></td>
-            <td class="category-total text-right">0</td>
-            <td class="actions"><button class="delete-btn" title="Xóa danh mục">&times;</button></td>
+            <td colspan="7"><input type="text" placeholder="Nhập tên danh mục..."></td>
+            <td class="actions"><button class="delete-btn" title="Xóa danh mục" aria-label="Xóa danh mục và các hạng mục con">&times;</button></td>
         `;
+        // Removed category total cell to simplify structure. Total is in input placeholder now.
+        row.querySelector('input').addEventListener('focus', (e) => e.target.placeholder = 'Nhập tên danh mục...');
         return row;
     }
 
     function createNewQuoteObject(name) {
         const defaultName = name || `Báo giá #${quotes.length + 1}`;
+        const newId = Date.now();
         return {
-            id: Date.now(),
+            id: newId,
             name: defaultName,
+            lastModified: new Date().toISOString(),
             company: { name: 'Tên Công Ty Của Bạn', address: 'Địa chỉ: 123 Đường ABC, Phường X, Quận Y, TP. Z', contact: 'Điện thoại: 0987 654 321 | Email: info@tencongty.com', bank: '' },
             client: { name: '', phone: '', address: ''},
-            quoteNumber: `BG-${new Date().getFullYear()}-001`,
+            quoteNumber: `BG-${new Date().getFullYear()}-${newId.toString().slice(-4)}`,
             vatRate: 10,
             notes: 'Báo giá có hiệu lực trong vòng 30 ngày.',
             tableData: [
@@ -373,15 +409,15 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTotals() {
         let grandSubtotal = 0;
         let currentCategorySubtotal = 0;
-        let currentCategoryTotalElement = null;
+        let currentCategoryInput = null;
 
         tableBody.querySelectorAll('tr').forEach(row => {
             if (row.classList.contains('category-header')) {
-                if (currentCategoryTotalElement) {
-                    currentCategoryTotalElement.textContent = formatCurrency(currentCategorySubtotal);
+                if (currentCategoryInput) {
+                    currentCategoryInput.placeholder = `Nhóm (${formatCurrency(currentCategorySubtotal)})`;
                 }
                 currentCategorySubtotal = 0;
-                currentCategoryTotalElement = row.querySelector('.category-total');
+                currentCategoryInput = row.querySelector('input');
             } else if (row.classList.contains('item-row')) {
                 const length = parseFloat(row.querySelector('.dim-d').value) || 0;
                 const height = parseFloat(row.querySelector('.dim-c').value) || 0;
@@ -400,8 +436,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        if (currentCategoryTotalElement) {
-            currentCategoryTotalElement.textContent = formatCurrency(currentCategorySubtotal);
+        if (currentCategoryInput) {
+            currentCategoryInput.placeholder = `Nhóm (${formatCurrency(currentCategorySubtotal)})`;
         }
 
         const taxRate = (parseFloat(vatRateInput.value) || 0) / 100;
@@ -447,14 +483,14 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             updateRowNumbers();
             updateTotals();
-            saveState(); // Immediate save
+            debouncedSave();
         });
 
         addCategoryBtn.addEventListener('click', () => {
             const row = createCategoryRowDOM();
             tableBody.appendChild(row);
             updateTotals();
-            saveState(); // Immediate save
+            debouncedSave();
         });
 
         tableBody.addEventListener('click', function(e) {
@@ -472,47 +508,96 @@ document.addEventListener('DOMContentLoaded', function() {
                 rowToDelete.remove();
                 updateRowNumbers();
                 updateTotals();
-                saveState(); // Immediate save
+                debouncedSave();
+            }
+        });
+
+        quoteListBtn.addEventListener('click', openQuoteListModal);
+        modalCloseBtn.addEventListener('click', closeQuoteListModal);
+        quoteListModal.addEventListener('click', (e) => {
+            if (e.target === quoteListModal) {
+                closeQuoteListModal();
+            }
+        });
+        savedQuotesList.addEventListener('click', handleQuoteListClick);
+
+        // Confirmation Modal Handlers
+        confirmCancelBtn.addEventListener('click', hideConfirmModal);
+        confirmOkBtn.addEventListener('click', () => {
+            if (typeof confirmCallback === 'function') {
+                confirmCallback();
+            }
+            hideConfirmModal();
+        });
+        confirmModal.addEventListener('click', (e) => {
+             if (e.target === confirmModal) {
+                hideConfirmModal();
             }
         });
     }
 
     // --- Tab Actions ---
     function switchQuote(quoteId) {
-        if (quoteId == activeQuoteId) return;
-        saveState(); // Save current before switching
+        if (quoteId === activeQuoteId && document.querySelector('.tab.active')) return;
+        if(activeQuoteId !== null) debouncedSave.flush();
         activeQuoteId = quoteId;
         renderQuote(activeQuoteId);
-        renderTabs(); // To update active state
-        localStorage.setItem(getStorageKey('activeQuoteId'), activeQuoteId);
+        renderTabs(); 
+        localStorage.setItem(getStorageKey('activeQuoteId'), activeQuoteId.toString());
     }
     
     function addNewQuote() {
-        saveState(); // Save current work first
+        debouncedSave.flush();
         const newQuote = createNewQuoteObject();
         quotes.push(newQuote);
-        activeQuoteId = newQuote.id;
-        renderQuote(activeQuoteId);
-        renderTabs();
-        saveState(); // Save the new quote state
+        saveState();
+        switchQuote(newQuote.id);
     }
 
-    function deleteQuote(quoteId) {
-        if (quotes.length === 1) {
+    function deleteQuote(quoteId, fromModal = false) {
+        const savedQuotesKey = getStorageKey('savedQuotes');
+        let allQuotes = JSON.parse(localStorage.getItem(savedQuotesKey) || '[]');
+
+        if (allQuotes.length <= 1) {
             alert("Không thể xóa báo giá cuối cùng.");
             return;
         }
-        
-        const quoteToDelete = quotes.find(q => q.id == quoteId);
-        if (confirm(`Bạn có chắc chắn muốn xóa "${quoteToDelete.name}" không?`)) {
-            quotes = quotes.filter(q => q.id != quoteId);
-            if (activeQuoteId == quoteId) {
-                activeQuoteId = quotes[0].id;
-                renderQuote(activeQuoteId);
+
+        const quoteToDelete = allQuotes.find(q => q.id === quoteId);
+        if (!quoteToDelete) return;
+
+        showConfirmModal(
+            `Bạn có chắc chắn muốn xóa vĩnh viễn báo giá "${quoteToDelete.name}" không?`,
+            () => {
+                const newQuotesList = allQuotes.filter(q => q.id !== quoteId);
+                localStorage.setItem(savedQuotesKey, JSON.stringify(newQuotesList));
+                
+                quotes = quotes.filter(q => q.id !== quoteId);
+                
+                if (activeQuoteId === quoteId) {
+                    let newActiveId = null;
+                    if (quotes.length > 0) {
+                        newActiveId = quotes[0].id;
+                    } else if (newQuotesList.length > 0) {
+                         newActiveId = newQuotesList[0].id;
+                         quotes.push(newQuotesList[0]);
+                    }
+                    if (newActiveId) {
+                        switchQuote(newActiveId);
+                    } else {
+                         // This case shouldn't be reached if we prevent deleting the last quote
+                         activeQuoteId = null;
+                         resetUI(); // Or create a new blank one
+                    }
+                }
+                
+                renderTabs();
+                
+                if (fromModal || quoteListModal.style.display === 'flex') {
+                    renderSavedQuotes(newQuotesList);
+                }
             }
-            renderTabs();
-            saveState();
-        }
+        );
     }
 
     function editTabName(tabNameElement, quoteId) {
@@ -528,23 +613,100 @@ document.addEventListener('DOMContentLoaded', function() {
 
         const saveNewName = () => {
             const newName = input.value.trim() || currentName;
-            const quote = quotes.find(q => q.id == quoteId);
+            const quote = quotes.find(q => q.id === quoteId);
             if (quote) {
                 quote.name = newName;
             }
             input.replaceWith(tabNameElement);
-            saveState(); // This will re-render tabs with the new name
+            debouncedSave();
         };
 
         input.addEventListener('blur', saveNewName);
         input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') {
-                input.blur();
-            } else if (e.key === 'Escape') {
+            if (e.key === 'Enter') input.blur();
+            else if (e.key === 'Escape') {
                 input.value = currentName;
                 input.blur();
             }
         });
+    }
+
+    // --- Quote List Modal ---
+    function openQuoteListModal() {
+        const savedQuotesKey = getStorageKey('savedQuotes');
+        if (!savedQuotesKey) return;
+        const allQuotes = JSON.parse(localStorage.getItem(savedQuotesKey) || '[]');
+        renderSavedQuotes(allQuotes);
+        quoteListModal.style.display = 'flex';
+    }
+
+    function closeQuoteListModal() {
+        quoteListModal.style.display = 'none';
+    }
+    
+    function showConfirmModal(message, onConfirm) {
+        confirmMessage.textContent = message;
+        confirmCallback = onConfirm;
+        confirmModal.style.display = 'flex';
+    }
+
+    function hideConfirmModal() {
+        confirmModal.style.display = 'none';
+        confirmCallback = null;
+    }
+
+    function renderSavedQuotes(quotesToRender) {
+        savedQuotesList.innerHTML = '';
+        if (!quotesToRender || quotesToRender.length === 0) {
+            savedQuotesList.innerHTML = '<li>Không có báo giá nào được lưu.</li>';
+            return;
+        }
+
+        quotesToRender.sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
+
+        quotesToRender.forEach(quote => {
+            const li = document.createElement('li');
+            li.dataset.id = quote.id;
+            
+            const lastModifiedDate = new Date(quote.lastModified).toLocaleDateString('vi-VN');
+            const clientName = quote.client?.name ? `Khách hàng: ${quote.client.name}` : 'Chưa có khách hàng';
+
+            li.innerHTML = `
+                <div class="quote-item-info">
+                    <span class="quote-item-name">${quote.name}</span>
+                    <span class="quote-item-details">${clientName} - ${quote.quoteNumber} - Sửa lần cuối: ${lastModifiedDate}</span>
+                </div>
+                <div class="quote-item-actions">
+                    <button class="btn-open">Mở</button>
+                    <button class="btn-delete">Xóa</button>
+                </div>
+            `;
+            savedQuotesList.appendChild(li);
+        });
+    }
+
+    function handleQuoteListClick(e) {
+        const target = e.target;
+        const quoteItem = target.closest('li[data-id]');
+        if (!quoteItem) return;
+
+        const quoteId = Number(quoteItem.dataset.id);
+
+        if (target.matches('.btn-open')) {
+            const isOpen = quotes.some(q => q.id === quoteId);
+            if (!isOpen) {
+                const savedQuotesKey = getStorageKey('savedQuotes');
+                const allQuotes = JSON.parse(localStorage.getItem(savedQuotesKey) || '[]');
+                const quoteData = allQuotes.find(q => q.id === quoteId);
+                if (quoteData) {
+                    quotes.push(quoteData);
+                }
+            }
+            switchQuote(quoteId);
+            closeQuoteListModal();
+        } else if (target.matches('.btn-delete')) {
+            deleteQuote(quoteId, true);
+        }
     }
 
     // --- Start the App ---

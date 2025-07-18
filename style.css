@@ -1,7 +1,9 @@
+
 /* --- Kiểu dáng chung cho màn hình --- */
 :root {
     --primary-color: #005A9C;
     --light-primary-color: #e6f7ff;
+    --danger-color: #dc3545;
     --border-color: #dee2e6;
     --background-color: #f0f2f5;
     --text-color: #212529;
@@ -23,17 +25,20 @@ body {
     justify-content: space-between;
     align-items: stretch;
     background-color: #e9ecef;
-    padding: 0 15px;
     border-bottom: 1px solid var(--border-color);
+    padding: 0 15px;
 }
 
 #tabs-container {
     background-color: transparent;
-    padding: 5px 0 0 0;
+    padding-top: 5px;
     display: flex;
     align-items: flex-end;
     gap: 4px;
     flex-grow: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
     border-bottom: none;
 }
 
@@ -46,11 +51,12 @@ body {
     cursor: pointer;
     position: relative;
     bottom: -1px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     gap: 8px;
     transition: background-color 0.2s;
     max-width: 200px;
+    flex-shrink: 0;
 }
 .tab span {
     white-space: nowrap;
@@ -84,7 +90,7 @@ body {
 }
 .tab .tab-close-btn:hover {
     background-color: #e9ecef;
-    color: #dc3545;
+    color: var(--danger-color);
 }
 .tab-name-edit {
     border: 1px solid var(--primary-color);
@@ -116,18 +122,10 @@ body {
     background-color: #004a80;
 }
 
-.page-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-}
-
 .page {
-    width: 100%;
-    max-width: 297mm; /* A3 width */
-    min-height: 420mm; /* A3 height */
-    padding: 25mm;
+    width: 210mm; /* A4 width */
+    min-height: 297mm; /* A4 height */
+    padding: 20mm;
     margin: 10px auto;
     background: white;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
@@ -269,25 +267,21 @@ th {
 .col-total { width: 15%; }
 .col-actions { width: 5%; }
 
-th.col-volume, th.col-qty, th.col-price, th.col-total {
-    text-align: right;
-}
-
 td { vertical-align: middle; }
 tbody tr:hover { background-color: #f8f9fa; }
-td.text-right, th.text-right { text-align: right; }
+.text-right { text-align: right; }
 
 tfoot { font-size: 1.05em; }
-tfoot td { border: none; padding: 8px 10px; }
+tfoot td { border: none; padding: 8px 10px; vertical-align: middle; }
 tfoot tr:first-child td { padding-top: 15px; }
 tfoot td.total-label { text-align: right; padding-right: 20px; }
 tfoot td.grand-total-label { font-size: 1.1em; }
 tfoot .total-value {
     text-align: right;
     font-weight: 700;
-    white-space: nowrap; /* Ngăn không cho số tiền xuống dòng */
+    white-space: nowrap;
 }
-tfoot #grand-total { color: var(--primary-color); font-size: 1.25em; }
+tfoot #grand-total strong { color: var(--primary-color); font-size: 1.25em; }
 
 input[type="text"], input[type="number"] {
     width: 100%;
@@ -300,7 +294,6 @@ input[type="text"], input[type="number"] {
 }
 input:focus { outline: none; background-color: #e6f7ff; }
 td input[type="number"], td .quantity, .price { text-align: right; }
-th.col-qty { text-align: center; }
 
 footer {
     margin-top: 40px;
@@ -364,12 +357,16 @@ footer {
     border-left: 3px solid var(--primary-color);
 }
 .category-header input[type="text"] { font-weight: bold; font-size: 1.1em; color: var(--primary-color); }
-.category-total { font-weight: bold; text-align: right; color: var(--primary-color); }
+.category-header input::placeholder {
+    color: var(--primary-color);
+    opacity: 0.7;
+    font-weight: bold;
+}
 
 .delete-btn {
     background: none;
     border: none;
-    color: #dc3545;
+    color: var(--danger-color);
     cursor: pointer;
     font-size: 22px;
     font-weight: 700;
@@ -489,12 +486,33 @@ body.app-hidden #login-overlay {
     margin: 0 auto !important; /* Center the button */
 }
 
-#user-profile {
+#header-right-side {
     display: none; /* Hidden by default, shown by JS */
     align-items: center;
-    gap: 10px;
+    gap: 15px;
     flex-shrink: 0;
-    margin-left: 20px;
+}
+
+#user-profile {
+    display: flex; 
+    align-items: center;
+    gap: 10px;
+}
+
+#quote-list-btn {
+    padding: 8px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    background-color: #fff;
+    color: var(--primary-color);
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+#quote-list-btn:hover {
+    background-color: var(--light-primary-color);
+    border-color: var(--primary-color);
 }
 
 #user-pic {
@@ -526,50 +544,274 @@ body.app-hidden #login-overlay {
     border-color: #ccc;
 }
 
+/* --- Modal Styles --- */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    backdrop-filter: blur(4px);
+    padding: 15px;
+    box-sizing: border-box;
+}
+.modal-content {
+    background: white;
+    padding: 25px 30px;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    width: 100%;
+    max-width: 700px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+}
+.modal-header h2 {
+    margin: 0;
+    font-size: 1.5em;
+    color: var(--primary-color);
+}
+.modal-header .close-btn {
+    background: none;
+    border: none;
+    font-size: 28px;
+    cursor: pointer;
+    color: var(--light-text-color);
+    line-height: 1;
+}
+.modal-body {
+    overflow-y: auto;
+    padding-right: 10px; /* for scrollbar */
+    margin-right: -10px;
+}
+.modal-footer {
+    padding-top: 20px;
+    margin-top: auto;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+.modal-footer button {
+    padding: 10px 20px;
+    font-size: 15px;
+    font-weight: 500;
+    border-radius: 5px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    transition: all 0.2s;
+}
+.modal-footer .btn-danger {
+    background-color: var(--danger-color);
+    border-color: var(--danger-color);
+    color: white;
+}
+.modal-footer .btn-danger:hover {
+    background-color: #c82333;
+    border-color: #c82333;
+}
+.modal-footer button:not(.btn-danger) {
+    background-color: #f8f9fa;
+}
+.modal-footer button:not(.btn-danger):hover {
+    background-color: #e2e6ea;
+}
+
+#saved-quotes-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+#saved-quotes-list li {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+#saved-quotes-list li:last-child {
+    border-bottom: none;
+}
+#saved-quotes-list li:hover {
+    background-color: #f8f9fa;
+}
+.quote-item-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.quote-item-name {
+    font-weight: 600;
+    color: var(--text-color);
+}
+.quote-item-details {
+    font-size: 0.9em;
+    color: var(--light-text-color);
+}
+.quote-item-actions {
+    display: flex;
+    gap: 10px;
+    flex-shrink: 0;
+    width: 100%;
+}
+.quote-item-actions button {
+    padding: 6px 14px;
+    font-size: 14px;
+    cursor: pointer;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
+    transition: all 0.2s;
+    flex-grow: 1;
+}
+.quote-item-actions .btn-open {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: white;
+}
+.quote-item-actions .btn-open:hover {
+    background-color: #004a80;
+}
+.quote-item-actions .btn-delete {
+    background-color: transparent;
+    color: var(--danger-color);
+    border-color: var(--danger-color);
+}
+.quote-item-actions .btn-delete:hover {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* --- Save Indicator --- */
+#save-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: rgba(40, 40, 40, 0.9);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 5px;
+    z-index: 3000;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s, visibility 0.3s;
+}
+#save-indicator.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
 
 /* --- ĐỊNH DẠNG CHO VIỆC IN ẤN (XUẤT PDF) --- */
 @media print {
-    .no-print, .controls, .actions-col, .actions, .table-actions { display: none !important; }
-    @page { size: A3; margin: 20mm; }
-
-    body { background-color: #fff; padding: 0; margin: 0; }
+    body { background-color: #fff; }
+    .no-print { display: none !important; }
     .page {
         width: 100%; max-width: 100%; min-height: initial;
         box-shadow: none; margin: 0; padding: 0; border: none; border-radius: 0;
     }
-    
     th { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
-    .category-header td { background-color: #eaf6ff !important; -webkit-print-color-adjust: exact; }
-
-    /* Cập nhật lại chiều rộng cột cho bản in */
-    .col-stt { width: 5%; }
-    .col-content { width: 40%; }
-    .col-unit { width: 8%; }
-    .col-volume { width: 8%; }
-    .col-qty { width: 7%; }
-    .col-price { width: 12%; }
-    .col-total { width: 15%; }
-
+    .category-header td { background-color: var(--light-primary-color) !important; -webkit-print-color-adjust: exact; }
     table, section { page-break-inside: auto; }
     tr { page-break-inside: avoid; page-break-after: auto; }
     thead { display: table-header-group; }
     tfoot { display: table-footer-group; }
-
     input, textarea {
         border: none !important; box-shadow: none !important; background-color: transparent !important;
         color: #000 !important; padding: 2px 0; width: 100%;
     }
-    .client-info-grid, .company-info input {
-        padding: 0 !important;
-    }
-    .client-info-grid {
-        gap: 2px 8px;
-    }
-
     .dimensions-wrapper { background-color: transparent !important; border: none !important; padding: 2px 0 !important; }
     .dimensions-wrapper input { padding: 0 !important; }
-    
     td, th { padding: 8px 4px; font-size: 9.5pt; }
     .item-spec, .dimensions-wrapper, td .volume { font-size: 8.5pt; }
     .notes textarea { min-height: unset; }
+}
+
+/* --- GIAO DIỆN CHO DI ĐỘNG --- */
+@media screen and (max-width: 800px) {
+    .page {
+        width: 100%;
+        min-height: unset;
+        padding: 15px;
+        margin: 0;
+        border-radius: 0;
+    }
+    .header-bar { flex-direction: column; align-items: stretch; padding: 0; }
+    #tabs-container { padding-left: 10px; }
+    #header-right-side {
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-top: 1px solid var(--border-color);
+        justify-content: space-between;
+    }
+    header { flex-direction: column; gap: 20px; }
+    .quote-title, .company-info { text-align: left; flex-basis: auto; }
+    .quote-title h2, .quote-title p { text-align: left; justify-content: flex-start; }
+
+    .client-info-grid { grid-template-columns: 1fr; }
+    .client-info-grid label { text-align: left; }
+    
+    #quote-table thead { display: none; }
+    #quote-table tr {
+        display: block;
+        margin-bottom: 15px;
+        border: 1px solid var(--border-color);
+        border-radius: 5px;
+        padding: 5px;
+    }
+    #quote-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        text-align: right;
+        padding: 8px 10px;
+        border: none;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    #quote-table tr td:last-child { border-bottom: none; }
+    #quote-table td:before {
+        content: attr(data-label);
+        text-align: left;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    #quote-table td.actions { justify-content: center; padding: 10px 0; }
+    #quote-table td[data-label="Nội dung"] { flex-direction: column; align-items: stretch; }
+    #quote-table td[data-label="Nội dung"]:before { margin-bottom: 10px; }
+
+    .category-header { padding: 0; }
+    .category-header td {
+        justify-content: space-between;
+        background-color: var(--light-primary-color) !important;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .category-header td .delete-btn {
+        margin-left: 10px;
+    }
+
+    tfoot tr { display: flex; justify-content: space-between; padding: 12px 10px; border-bottom: 1px solid var(--border-color); }
+    tfoot tr:last-child { border-bottom: none; font-size: 1.1em; }
+    tfoot td { display: contents; } /* Allows flex on tr to work */
+    
+    footer { flex-direction: column; align-items: stretch; }
+    .signature { text-align: left; margin-top: 20px; }
+
+    @media (max-width: 480px) {
+        .quote-item-info { width: 100%; }
+        #saved-quotes-list li { flex-wrap: wrap; }
+    }
 }
