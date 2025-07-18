@@ -435,68 +435,12 @@ td .volume { font-size: 0.9em; color: var(--text-color); font-family: 'Courier N
     background-color: #5a6268;
 }
 
-/* --- Login & User Profile --- */
-body.app-hidden .page,
-body.app-hidden .header-bar,
-body.app-hidden .controls {
-    visibility: hidden;
-}
-
-#login-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: var(--background-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-    transition: opacity 0.3s ease;
-}
-
-body.app-hidden #login-overlay {
-    opacity: 1;
-}
-
-#login-box {
-    text-align: center;
-    background-color: white;
-    padding: 40px 50px;
-    border-radius: 8px;
-    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-    max-width: 450px;
-}
-
-#login-box h2 {
-    color: var(--primary-color);
-    margin-top: 0;
-    margin-bottom: 15px;
-    font-size: 1.5em;
-}
-
-#login-box p {
-    margin-bottom: 30px;
-    color: var(--light-text-color);
-    line-height: 1.6;
-}
-
-.g_id_signin {
-    margin: 0 auto !important; /* Center the button */
-}
-
+/* --- Header --- */
 #header-right-side {
-    display: none; /* Hidden by default, shown by JS */
+    display: flex;
     align-items: center;
     gap: 15px;
     flex-shrink: 0;
-}
-
-#user-profile {
-    display: flex; 
-    align-items: center;
-    gap: 10px;
 }
 
 #quote-list-btn {
@@ -513,35 +457,6 @@ body.app-hidden #login-overlay {
 #quote-list-btn:hover {
     background-color: var(--light-primary-color);
     border-color: var(--primary-color);
-}
-
-#user-pic {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: 2px solid #fff;
-}
-
-#user-name {
-    font-weight: 600;
-    color: var(--text-color);
-    font-size: 0.9em;
-}
-
-#logout-btn {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--light-text-color);
-    font-size: 13px;
-    padding: 6px 12px;
-    border-radius: 15px;
-    cursor: pointer;
-    transition: all 0.2s;
-}
-#logout-btn:hover {
-    background: #fff;
-    color: var(--text-color);
-    border-color: #ccc;
 }
 
 /* --- Modal Styles --- */
@@ -755,7 +670,7 @@ body.app-hidden #login-overlay {
         padding: 10px;
         background-color: #f8f9fa;
         border-top: 1px solid var(--border-color);
-        justify-content: space-between;
+        justify-content: flex-end;
     }
     header { flex-direction: column; gap: 20px; }
     .quote-title, .company-info { text-align: left; flex-basis: auto; }
