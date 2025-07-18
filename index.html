@@ -17,7 +17,6 @@
             <a href="#" class="logo">Báo Giá Pro</a>
             <nav class="main-nav">
                 <button id="nav-editor" class="nav-btn active">Soạn Thảo</button>
-                <button id="save-quote-btn" class="nav-btn btn-save">Lưu Báo Giá</button>
                 <button id="nav-list" class="nav-btn">Danh Sách</button>
             </nav>
         </div>
@@ -113,6 +112,8 @@
             </div>
 
             <div class="controls no-print">
+                <button id="clear-quote-btn">Làm Trống Báo Giá</button>
+                <button id="save-quote-btn">Lưu Báo Giá</button>
                 <button onclick="window.print()">Xuất PDF / In</button>
             </div>
         </div>
@@ -135,14 +136,14 @@
     <div id="confirm-modal" class="modal-overlay no-print" style="display: none;">
         <div class="modal-content" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">
             <div class="modal-header">
-                <h2 id="confirm-title">Xác nhận xóa</h2>
+                <h2 id="confirm-title">Xác nhận</h2>
             </div>
             <div class="modal-body">
                 <p id="confirm-message">Bạn có chắc chắn muốn xóa mục này không?</p>
             </div>
             <div class="modal-footer">
                 <button id="confirm-cancel-btn">Hủy</button>
-                <button id="confirm-ok-btn" class="btn-danger">Xóa</button>
+                <button id="confirm-ok-btn" class="btn-danger">Xác nhận</button>
             </div>
         </div>
     </div>

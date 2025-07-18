@@ -13,6 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const saveQuoteBtn = document.getElementById('save-quote-btn');
     const editorView = document.getElementById('editor-view');
     const listView = document.getElementById('list-view');
+    const clearQuoteBtn = document.getElementById('clear-quote-btn');
 
     // Editor View
     const quoteNameInput = document.getElementById('quote-name-input');
@@ -29,6 +30,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Modals
     const confirmModal = document.getElementById('confirm-modal');
+    const confirmTitle = document.getElementById('confirm-title');
     const confirmMessage = document.getElementById('confirm-message');
     const confirmOkBtn = document.getElementById('confirm-ok-btn');
     const confirmCancelBtn = document.getElementById('confirm-cancel-btn');
@@ -80,7 +82,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         saveState(true);
         // If list view is visible, refresh it
-        if (listView.style.display === 'block') {
+        if (listView.style.display !== 'none') {
             renderSavedQuotes(quotes);
         }
     }
@@ -324,6 +326,7 @@ document.addEventListener('DOMContentLoaded', function() {
         navEditor.addEventListener('click', showEditorView);
         navList.addEventListener('click', showListView);
         saveQuoteBtn.addEventListener('click', handleSaveQuote);
+        clearQuoteBtn.addEventListener('click', handleClearQuote);
 
         // Editor View - Update totals on any input change
         editorView.addEventListener('input', (e) => {
@@ -414,6 +417,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!quoteToDelete) return;
 
         showConfirmModal(
+            'Xác nhận xóa',
             `Bạn có chắc chắn muốn xóa vĩnh viễn báo giá "${quoteToDelete.name}" không?`,
             () => {
                 quotes = quotes.filter(q => q.id !== quoteId);
@@ -437,10 +441,48 @@ document.addEventListener('DOMContentLoaded', function() {
         );
     }
     
+    function handleClearQuote() {
+        showConfirmModal(
+            'Làm trống báo giá?',
+            'Bạn có chắc muốn xoá toàn bộ nội dung báo giá này không? Thông tin công ty sẽ được giữ lại, nhưng tất cả hạng mục, ghi chú và thông tin khách hàng sẽ được xoá.',
+            () => {
+                const activeQuoteIndex = quotes.findIndex(q => q.id === activeQuoteId);
+                if (activeQuoteIndex === -1) return;
+    
+                const currentQuote = quotes[activeQuoteIndex];
+                const blankQuoteTemplate = createNewQuoteObject();
+    
+                // Overwrite the current quote with blank data, but keep essential fields
+                quotes[activeQuoteIndex] = {
+                    ...blankQuoteTemplate,
+                    id: currentQuote.id,
+                    name: currentQuote.name,
+                    company: currentQuote.company,
+                    lastModified: new Date().toISOString(),
+                    // Regenerate quote number to be consistent, using original creation year from ID
+                    quoteNumber: `BG-${new Date(currentQuote.id).getFullYear()}-${currentQuote.id.toString().slice(-4)}`,
+                };
+                
+                renderQuote(activeQuoteId);
+                handleSaveQuote(); // Use existing save function to persist changes and show indicator
+            }
+        );
+    }
+
     // --- Quote List View ---
-    function showConfirmModal(message, onConfirm) {
+    function showConfirmModal(title, message, onConfirm) {
+        confirmTitle.textContent = title;
         confirmMessage.textContent = message;
         confirmCallback = onConfirm;
+
+        // Reset button classes
+        confirmOkBtn.className = 'btn-danger';
+        confirmOkBtn.textContent = 'Xóa';
+
+        if(title === 'Làm trống báo giá?') {
+            confirmOkBtn.textContent = 'Làm Trống';
+        }
+
         confirmModal.style.display = 'flex';
     }
 

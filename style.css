@@ -75,15 +75,6 @@ body {
     border-bottom: 2px solid var(--primary-color);
     border-radius: var(--border-radius) var(--border-radius) 0 0;
 }
-.nav-btn.btn-save {
-    background-color: var(--success-color);
-    color: var(--white);
-    font-weight: 600;
-}
-.nav-btn.btn-save:hover {
-    background-color: var(--success-color-dark);
-    color: var(--white);
-}
 
 /* --- App Container --- */
 #app-container {
@@ -287,6 +278,19 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 .controls button:hover { background-color: var(--primary-color-dark); }
 .controls button:active { transform: scale(0.98); }
 
+.controls #save-quote-btn {
+    background-color: var(--success-color);
+}
+.controls #save-quote-btn:hover {
+    background-color: var(--success-color-dark);
+}
+.controls #clear-quote-btn {
+    background-color: var(--danger-color);
+}
+.controls #clear-quote-btn:hover {
+    background-color: var(--danger-color-dark);
+}
+
 
 /* --- List View --- */
 #list-view { padding: 1rem; background-color: var(--white); border-radius: var(--border-radius); box-shadow: var(--shadow); }
@@ -356,6 +360,10 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     border-bottom: 1px solid var(--border-color); padding-bottom: 15px; margin-bottom: 20px;
 }
 .modal-header h2 { margin: 0; font-size: 1.5em; color: var(--primary-color); }
+.modal-body p {
+    line-height: 1.6;
+    font-size: 1.05rem;
+}
 .modal-footer {
     padding-top: 20px; margin-top: auto; display: flex; justify-content: flex-end; gap: 10px;
 }
@@ -392,6 +400,9 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     th, .category-header td { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
     input, textarea { border: none !important; color: #000 !important; padding: 2px 0; }
     td, th { padding: 8px 4px; font-size: 9.5pt; }
+    .actions, .actions-col {
+        display: none;
+    }
 }
 
 /* --- Responsive Design --- */
@@ -423,7 +434,8 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     tfoot td { display: contents; }
     .quote-footer { flex-direction: column; }
     .signature { text-align: left; margin-top: 20px; }
-
+    .controls { flex-wrap: wrap; }
+    
     .list-view-header { flex-direction: column; align-items: flex-start; gap: 1rem; }
     .list-view-actions { flex-direction: column; width: 100%; align-items: stretch; }
     .quote-card { flex-direction: column; align-items: flex-start; }
