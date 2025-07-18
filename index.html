@@ -4,117 +4,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tạo Báo Giá Chuyên Nghiệp</title>
+    <title>Trình Tạo Báo Giá Chuyên Nghiệp</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="header-bar no-print">
-        <div id="tabs-container"></div>
-        <div id="header-right-side">
-            <button id="quote-list-btn">Danh sách</button>
+    <header class="main-header no-print">
+        <div class="header-content">
+            <a href="#" class="logo">Báo Giá Pro</a>
+            <nav class="main-nav">
+                <button id="nav-editor" class="nav-btn active">Soạn Thảo</button>
+                <button id="nav-list" class="nav-btn">Danh Sách</button>
+            </nav>
         </div>
-    </div>
+    </header>
 
-    <div class="page">
-        <header>
-            <div class="company-info">
-                <input type="text" id="company-name" class="company-name-input" placeholder="Tên Công Ty Của Bạn">
-                <input type="text" id="company-address" class="company-details-input" placeholder="Địa chỉ">
-                <input type="text" id="company-contact" class="company-details-input" placeholder="Điện thoại | Email">
-                <input type="text" id="company-bank" class="company-details-input" placeholder="Số tài khoản ngân hàng">
+    <main id="app-container">
+        <div id="editor-view">
+            <div class="header-bar no-print">
+                <div id="tabs-container"></div>
             </div>
-            <div class="quote-title">
-                <h2>BÁO GIÁ</h2>
-                <p>Số: <input type="text" id="quote-number" value="BG-2025-001"></p>
-                <p>Ngày: <span id="quote-date"></span></p>
+
+            <div class="page">
+                <header class="quote-header">
+                    <div class="company-info">
+                        <input type="text" id="company-name" class="company-name-input" placeholder="Tên Công Ty Của Bạn">
+                        <input type="text" id="company-address" class="company-details-input" placeholder="Địa chỉ">
+                        <input type="text" id="company-contact" class="company-details-input" placeholder="Điện thoại | Email">
+                        <input type="text" id="company-bank" class="company-details-input" placeholder="Số tài khoản ngân hàng">
+                    </div>
+                    <div class="quote-title">
+                        <h2>BÁO GIÁ</h2>
+                        <p>Số: <input type="text" id="quote-number" value="BG-2025-001"></p>
+                        <p>Ngày: <span id="quote-date"></span></p>
+                    </div>
+                </header>
+
+                <section class="client-info">
+                     <div class="client-info-grid">
+                        <label for="client-name">Kính gửi:</label>
+                        <input type="text" id="client-name" placeholder="Tên khách hàng / Tên công ty">
+                        <label for="client-phone">Điện thoại:</label>
+                        <input type="text" id="client-phone" placeholder="Số điện thoại">
+                        <label for="client-address">Địa chỉ:</label>
+                        <input type="text" id="client-address" placeholder="Địa chỉ khách hàng">
+                    </div>
+                </section>
+
+                <section class="quote-details">
+                    <table id="quote-table">
+                        <thead>
+                            <tr>
+                                <th class="col-stt">STT</th>
+                                <th class="col-content">Nội dung</th>
+                                <th class="col-unit">Đơn vị</th>
+                                <th class="col-volume">KL (m²)</th>
+                                <th class="col-qty">SL</th>
+                                <th class="col-price">Đơn giá</th>
+                                <th class="col-total">Thành tiền</th>
+                                <th class="col-actions actions-col"></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Rows will be added here by JavaScript -->
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="6" class="total-label">Tổng cộng</td>
+                                <td id="subtotal" class="total-value">0</td>
+                                <td class="actions-col"></td>
+                            </tr>
+                            <tr>
+                                 <td colspan="6" class="total-label">
+                                    Thuế VAT (<input type="number" id="vat-rate" value="10" min="0" max="100">%)
+                                </td>
+                                <td id="tax" class="total-value">0</td>
+                                <td class="actions-col"></td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" class="total-label grand-total-label">TỔNG THANH TOÁN</td>
+                                <td id="grand-total" class="total-value">0</td>
+                                <td class="actions-col"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </section>
+
+                <div class="table-actions no-print">
+                    <button id="add-row">+ Thêm Hạng Mục</button>
+                    <button id="add-category">+ Thêm Nhóm</button>
+                </div>
+
+                <footer class="quote-footer">
+                    <div class="notes">
+                        <strong>Ghi chú:</strong>
+                        <textarea id="notes-area" rows="3" placeholder="Ví dụ: Báo giá có hiệu lực trong 30 ngày..."></textarea>
+                    </div>
+                    <div class="signature">
+                        <p><strong>Người lập báo giá</strong></p>
+                        <p>(Ký và ghi rõ họ tên)</p>
+                    </div>
+                </footer>
             </div>
-        </header>
 
-        <section class="client-info">
-             <div class="client-info-grid">
-                <label for="client-name">Kính gửi:</label>
-                <input type="text" id="client-name" placeholder="Tên khách hàng / Tên công ty">
-                <label for="client-phone">Điện thoại:</label>
-                <input type="text" id="client-phone" placeholder="Số điện thoại">
-                <label for="client-address">Địa chỉ:</label>
-                <input type="text" id="client-address" placeholder="Địa chỉ khách hàng">
-            </div>
-        </section>
-
-        <section class="quote-details">
-            <table id="quote-table">
-                <thead>
-                    <tr>
-                        <th class="col-stt">STT</th>
-                        <th class="col-content">Nội dung</th>
-                        <th class="col-unit">Đơn vị</th>
-                        <th class="col-volume">KL (m²)</th>
-                        <th class="col-qty">SL</th>
-                        <th class="col-price">Đơn giá</th>
-                        <th class="col-total">Thành tiền</th>
-                        <th class="col-actions actions-col">Xóa</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Rows will be added here by JavaScript -->
-                </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="6" class="total-label"><strong>Tổng cộng</strong></td>
-                        <td id="subtotal" class="total-value">0</td>
-                        <td class="actions-col"></td>
-                    </tr>
-                    <tr>
-                         <td colspan="6" class="total-label">
-                            <strong>Thuế VAT (<input type="number" id="vat-rate" value="10" min="0" max="100">%)</strong>
-                        </td>
-                        <td id="tax" class="total-value">0</td>
-                        <td class="actions-col"></td>
-                    </tr>
-                    <tr>
-                        <td colspan="6" class="total-label grand-total-label"><strong>TỔNG THANH TOÁN</strong></td>
-                        <td id="grand-total" class="total-value"><strong>0</strong></td>
-                        <td class="actions-col"></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </section>
-
-        <div class="table-actions no-print">
-            <button id="add-row">+Dòng</button>
-            <button id="add-category">+Nhóm</button>
-        </div>
-
-        <footer>
-            <div class="notes">
-                <strong>Ghi chú:</strong>
-                <textarea id="notes-area" rows="3"></textarea>
-            </div>
-            <div class="signature">
-                <p><strong>Người lập báo giá</strong></p>
-                <p>(Ký và ghi rõ họ tên)</p>
-            </div>
-        </footer>
-    </div>
-
-    <div class="controls no-print">
-        <button onclick="window.print()">Xuất PDF / In</button>
-    </div>
-
-    <div id="quote-list-modal" class="modal-overlay no-print" style="display: none;">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>Báo giá đã lưu</h2>
-                <button id="modal-close-btn" class="close-btn" aria-label="Đóng">&times;</button>
-            </div>
-            <div class="modal-body">
-                <ul id="saved-quotes-list">
-                    <!-- Quote items will be populated by JS -->
-                </ul>
+            <div class="controls no-print">
+                <button onclick="window.print()">Xuất PDF / In</button>
             </div>
         </div>
-    </div>
+
+        <div id="list-view" class="no-print" style="display: none;">
+             <div class="list-view-header">
+                <h2>Danh Sách Báo Giá</h2>
+                <div class="list-view-actions">
+                    <input type="search" id="search-quotes-input" placeholder="Tìm kiếm theo tên, khách hàng...">
+                    <button id="create-new-quote-from-list" class="btn-primary">+ Tạo Báo Giá Mới</button>
+                </div>
+            </div>
+            <div id="saved-quotes-container">
+                <!-- Quote cards will be populated by JS -->
+            </div>
+        </div>
+
+    </main>
 
     <div id="confirm-modal" class="modal-overlay no-print" style="display: none;">
         <div class="modal-content" role="alertdialog" aria-labelledby="confirm-title" aria-describedby="confirm-message">

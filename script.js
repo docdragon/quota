@@ -7,16 +7,26 @@ document.addEventListener('DOMContentLoaded', function() {
     let confirmCallback = null;
 
     // --- DOM Elements ---
+    // Main Navigation & Views
+    const navEditor = document.getElementById('nav-editor');
+    const navList = document.getElementById('nav-list');
+    const editorView = document.getElementById('editor-view');
+    const listView = document.getElementById('list-view');
+    
+    // Editor View
     const tabsContainer = document.getElementById('tabs-container');
     const tableBody = document.querySelector('#quote-table tbody');
     const addRowBtn = document.getElementById('add-row');
     const addCategoryBtn = document.getElementById('add-category');
     const vatRateInput = document.getElementById('vat-rate');
-    const quoteListBtn = document.getElementById('quote-list-btn');
-    const quoteListModal = document.getElementById('quote-list-modal');
-    const savedQuotesList = document.getElementById('saved-quotes-list');
-    const modalCloseBtn = document.getElementById('modal-close-btn');
     const saveIndicator = document.getElementById('save-indicator');
+    
+    // List View
+    const savedQuotesContainer = document.getElementById('saved-quotes-container');
+    const searchQuotesInput = document.getElementById('search-quotes-input');
+    const createNewQuoteFromListBtn = document.getElementById('create-new-quote-from-list');
+
+    // Modals
     const confirmModal = document.getElementById('confirm-modal');
     const confirmMessage = document.getElementById('confirm-message');
     const confirmOkBtn = document.getElementById('confirm-ok-btn');
@@ -55,30 +65,14 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const debounce = (func, delay) => {
         let timeout;
-        let pending = false;
-        let lastArgs;
-        let lastThis;
-
-        const runner = () => {
-            pending = false;
-            func.apply(lastThis, lastArgs);
-        };
-
-        const debounced = function(...args) {
-            lastArgs = args;
-            lastThis = this;
-            pending = true;
+        const debounced = (...args) => {
             clearTimeout(timeout);
-            timeout = setTimeout(runner, delay);
+            timeout = setTimeout(() => func.apply(this, args), delay);
         };
-
         debounced.flush = () => {
-            if (pending) {
-                clearTimeout(timeout);
-                runner();
-            }
+             clearTimeout(timeout);
+             func();
         };
-
         return debounced;
     };
 
@@ -160,6 +154,23 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
     
+    // --- View Management ---
+    function showEditorView() {
+        editorView.style.display = 'block';
+        listView.style.display = 'none';
+        navEditor.classList.add('active');
+        navList.classList.remove('active');
+    }
+
+    function showListView() {
+        renderSavedQuotes(quotes); // Re-render the list every time it's shown
+        searchQuotesInput.value = ''; // Clear search
+        editorView.style.display = 'none';
+        listView.style.display = 'block';
+        navEditor.classList.remove('active');
+        navList.classList.add('active');
+    }
+
     // --- Rendering ---
     function renderQuote(quoteId) {
         const quote = quotes.find(q => q.id === quoteId);
@@ -246,7 +257,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // --- Core Logic Functions ---
     function updateDate() {
         const today = new Date();
-        document.getElementById('quote-date').textContent = `${today.getDate()}/${today.getMonth() + 1}/${today.getFullYear()}`;
+        document.getElementById('quote-date').textContent = `Ngày ${today.getDate()} tháng ${today.getMonth() + 1} năm ${today.getFullYear()}`;
     }
 
     function formatCurrency(num) {
@@ -271,11 +282,11 @@ document.addEventListener('DOMContentLoaded', function() {
                     <input type="text" class="item-name" placeholder="Tên hạng mục, sản phẩm...">
                     <div class="dimensions-wrapper">
                         <label>K.thước (m):</label>
-                        <input type="number" class="dimension dim-d" value="0" min="0" step="0.01" title="Dài (m)">
+                        <input type="number" class="dimension dim-d" value="0" min="0" step="0.01" title="Dài (m)" placeholder="Dài">
                         <span>x</span>
-                        <input type="number" class="dimension dim-s" value="0" min="0" step="0.01" title="Sâu (m)">
+                        <input type="number" class="dimension dim-s" value="0" min="0" step="0.01" title="Sâu (m)" placeholder="Sâu">
                         <span>x</span>
-                        <input type="number" class="dimension dim-c" value="0" min="0" step="0.01" title="Cao (m)">
+                        <input type="number" class="dimension dim-c" value="0" min="0" step="0.01" title="Cao (m)" placeholder="Cao">
                     </div>
                     <input type="text" class="item-spec" placeholder="Quy cách, mô tả chi tiết...">
                 </div>
@@ -294,10 +305,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = document.createElement('tr');
         row.className = 'category-header';
         row.innerHTML = `
-            <td colspan="7"><input type="text" placeholder="Nhập tên danh mục..."></td>
+            <td colspan="7"><input type="text" placeholder="Nhập tên nhóm hạng mục..."></td>
             <td class="actions"><button class="delete-btn" title="Xóa danh mục" aria-label="Xóa danh mục và các hạng mục con">&times;</button></td>
         `;
-        row.querySelector('input').addEventListener('focus', (e) => e.target.placeholder = 'Nhập tên danh mục...');
+        row.querySelector('input').addEventListener('focus', (e) => e.target.placeholder = 'Nhập tên nhóm hạng mục...');
         return row;
     }
 
@@ -312,7 +323,7 @@ document.addEventListener('DOMContentLoaded', function() {
             client: { name: '', phone: '', address: ''},
             quoteNumber: `BG-${new Date().getFullYear()}-${newId.toString().slice(-4)}`,
             vatRate: 10,
-            notes: 'Báo giá có hiệu lực trong vòng 30 ngày.',
+            notes: 'Báo giá có hiệu lực trong vòng 30 ngày.\nThanh toán 50% khi ký hợp đồng, 50% còn lại khi bàn giao.',
             tableData: [
                 { type: 'category', name: 'Hạng mục chính' },
                 { type: 'item', name: '', spec: '', unit: 'cái', dimD: 0, dimS: 0, dimC: 0, quantity: 1, price: '0' }
@@ -328,10 +339,13 @@ document.addEventListener('DOMContentLoaded', function() {
         tableBody.querySelectorAll('tr').forEach(row => {
             if (row.classList.contains('category-header')) {
                 if (currentCategoryInput) {
-                    currentCategoryInput.placeholder = `Nhóm (${formatCurrency(currentCategorySubtotal)})`;
+                    currentCategoryInput.placeholder = `${currentCategoryInput.dataset.defaultPlaceholder} (${formatCurrency(currentCategorySubtotal)})`;
                 }
                 currentCategorySubtotal = 0;
                 currentCategoryInput = row.querySelector('input');
+                if(currentCategoryInput && !currentCategoryInput.dataset.defaultPlaceholder) {
+                   currentCategoryInput.dataset.defaultPlaceholder = currentCategoryInput.placeholder;
+                }
             } else if (row.classList.contains('item-row')) {
                 const length = parseFloat(row.querySelector('.dim-d').value) || 0;
                 const height = parseFloat(row.querySelector('.dim-c').value) || 0;
@@ -351,7 +365,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         if (currentCategoryInput) {
-            currentCategoryInput.placeholder = `Nhóm (${formatCurrency(currentCategorySubtotal)})`;
+             currentCategoryInput.placeholder = `${currentCategoryInput.dataset.defaultPlaceholder} (${formatCurrency(currentCategorySubtotal)})`;
         }
 
         const taxRate = (parseFloat(vatRateInput.value) || 0) / 100;
@@ -360,7 +374,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         document.getElementById('subtotal').textContent = formatCurrency(grandSubtotal);
         document.getElementById('tax').textContent = formatCurrency(tax);
-        document.getElementById('grand-total').querySelector('strong').textContent = formatCurrency(grandTotal);
+        document.getElementById('grand-total').textContent = formatCurrency(grandTotal);
     }
     
     function formatPriceInput(input) {
@@ -375,7 +389,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- Event Handlers ---
     function setupGlobalEventListeners() {
-        document.querySelector('.page').addEventListener('input', (e) => {
+        // Main Navigation
+        navEditor.addEventListener('click', showEditorView);
+        navList.addEventListener('click', showListView);
+
+        // Editor View
+        editorView.addEventListener('input', (e) => {
             if (e.target.classList.contains('price')) {
                  formatPriceInput(e.target);
             }
@@ -417,14 +436,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
 
-        quoteListBtn.addEventListener('click', openQuoteListModal);
-        modalCloseBtn.addEventListener('click', closeQuoteListModal);
-        quoteListModal.addEventListener('click', (e) => {
-            if (e.target === quoteListModal) {
-                closeQuoteListModal();
-            }
+        // List View
+        createNewQuoteFromListBtn.addEventListener('click', () => {
+            addNewQuote();
+            showEditorView();
         });
-        savedQuotesList.addEventListener('click', handleQuoteListClick);
+        searchQuotesInput.addEventListener('input', handleSearch);
+        savedQuotesContainer.addEventListener('click', handleQuoteListClick);
 
         // Confirmation Modal Handlers
         confirmCancelBtn.addEventListener('click', hideConfirmModal);
@@ -460,7 +478,7 @@ document.addEventListener('DOMContentLoaded', function() {
         switchQuote(newQuote.id);
     }
 
-    function deleteQuote(quoteId, fromModal = false) {
+    function deleteQuote(quoteId, fromListView = false) {
         if (quotes.length <= 1) {
             alert("Không thể xóa báo giá cuối cùng.");
             return;
@@ -478,11 +496,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (activeQuoteId === quoteId) {
                     const newActiveId = quotes[0].id;
                     switchQuote(newActiveId);
-                } else {
+                } else if (!fromListView) {
                     renderTabs(); // Just re-render tabs if a background tab was closed
                 }
                 
-                if (fromModal || quoteListModal.style.display === 'flex') {
+                if (fromListView) {
                     renderSavedQuotes(quotes);
                 }
             }
@@ -520,16 +538,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Quote List Modal ---
-    function openQuoteListModal() {
-        renderSavedQuotes(quotes);
-        quoteListModal.style.display = 'flex';
-    }
-
-    function closeQuoteListModal() {
-        quoteListModal.style.display = 'none';
-    }
-    
+    // --- Quote List View ---
     function showConfirmModal(message, onConfirm) {
         confirmMessage.textContent = message;
         confirmCallback = onConfirm;
@@ -542,45 +551,57 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function renderSavedQuotes(quotesToRender) {
-        savedQuotesList.innerHTML = '';
+        savedQuotesContainer.innerHTML = '';
         if (!quotesToRender || quotesToRender.length === 0) {
-            savedQuotesList.innerHTML = '<li>Không có báo giá nào được lưu.</li>';
+            savedQuotesContainer.innerHTML = '<p class="empty-list-message">Không có báo giá nào được tìm thấy. Hãy tạo một báo giá mới!</p>';
             return;
         }
 
         const sortedQuotes = [...quotesToRender].sort((a, b) => new Date(b.lastModified) - new Date(a.lastModified));
 
         sortedQuotes.forEach(quote => {
-            const li = document.createElement('li');
-            li.dataset.id = quote.id;
+            const card = document.createElement('div');
+            card.className = 'quote-card';
+            card.dataset.id = quote.id;
             
             const lastModifiedDate = new Date(quote.lastModified).toLocaleDateString('vi-VN');
-            const clientName = quote.client?.name ? `Khách hàng: ${quote.client.name}` : 'Chưa có khách hàng';
+            const clientName = quote.client?.name ? `<strong>Khách hàng:</strong> ${quote.client.name}` : '<em>Chưa có khách hàng</em>';
 
-            li.innerHTML = `
-                <div class="quote-item-info">
-                    <span class="quote-item-name">${quote.name}</span>
-                    <span class="quote-item-details">${clientName} - ${quote.quoteNumber} - Sửa lần cuối: ${lastModifiedDate}</span>
+            card.innerHTML = `
+                <div class="quote-card-info">
+                    <h3 class="quote-card-name">${quote.name}</h3>
+                    <p class="quote-card-details">${clientName}</p>
+                    <p class="quote-card-meta">Số: ${quote.quoteNumber} &bull; Sửa lần cuối: ${lastModifiedDate}</p>
                 </div>
-                <div class="quote-item-actions">
+                <div class="quote-card-actions">
                     <button class="btn-open">Mở</button>
                     <button class="btn-delete">Xóa</button>
                 </div>
             `;
-            savedQuotesList.appendChild(li);
+            savedQuotesContainer.appendChild(card);
         });
+    }
+    
+    function handleSearch(e) {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        const filteredQuotes = quotes.filter(q => 
+            q.name.toLowerCase().includes(searchTerm) || 
+            (q.client && q.client.name.toLowerCase().includes(searchTerm)) ||
+            q.quoteNumber.toLowerCase().includes(searchTerm)
+        );
+        renderSavedQuotes(filteredQuotes);
     }
 
     function handleQuoteListClick(e) {
         const target = e.target;
-        const quoteItem = target.closest('li[data-id]');
-        if (!quoteItem) return;
+        const quoteCard = target.closest('.quote-card');
+        if (!quoteCard) return;
 
-        const quoteId = Number(quoteItem.dataset.id);
+        const quoteId = Number(quoteCard.dataset.id);
 
         if (target.matches('.btn-open')) {
             switchQuote(quoteId);
-            closeQuoteListModal();
+            showEditorView();
         } else if (target.matches('.btn-delete')) {
             deleteQuote(quoteId, true);
         }
