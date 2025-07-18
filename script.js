@@ -55,10 +55,31 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const debounce = (func, delay) => {
         let timeout;
-        return (...args) => {
-            clearTimeout(timeout);
-            timeout = setTimeout(() => func.apply(this, args), delay);
+        let pending = false;
+        let lastArgs;
+        let lastThis;
+
+        const runner = () => {
+            pending = false;
+            func.apply(lastThis, lastArgs);
         };
+
+        const debounced = function(...args) {
+            lastArgs = args;
+            lastThis = this;
+            pending = true;
+            clearTimeout(timeout);
+            timeout = setTimeout(runner, delay);
+        };
+
+        debounced.flush = () => {
+            if (pending) {
+                clearTimeout(timeout);
+                runner();
+            }
+        };
+
+        return debounced;
     };
 
     const debouncedSave = debounce(() => saveState(), 500);
