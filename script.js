@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function() {
     // --- Firebase Configuration ---
     // IMPORTANT: Replace with your own Firebase project configuration
@@ -27,6 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
     let confirmCallback = null;
     let unsubscribeQuotes = () => {};
     let unsubscribeManagedItems = () => {};
+    let activeAutocompleteInput = null;
+    let autocompleteActiveIndex = -1;
+    let autocompleteHideTimeout;
 
     // --- DOM Elements ---
     const loginView = document.getElementById('login-view');
@@ -72,17 +74,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectItemModal = document.getElementById('select-item-modal');
     const selectItemList = document.getElementById('select-item-list');
     const searchSavedItemsInput = document.getElementById('search-saved-items-input');
+    
+    const autocompleteBox = document.getElementById('autocomplete-box');
 
     // --- Event Listeners Setup ---
     // Setup login listener immediately on load
     if (loginBtn) {
-        console.log("Login button found. Attaching click listener.");
         loginBtn.addEventListener('click', () => {
-            console.log("Login button clicked! Attempting to sign in with Google...");
             auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
-                .then((result) => {
-                    console.log("Sign-in successful!", result.user);
-                })
                 .catch(err => {
                     console.error("Login failed with an error:", err);
                     alert(`Đăng nhập thất bại.\n\nMã lỗi: ${err.code}\nThông báo: ${err.message}\n\nVui lòng kiểm tra lại cấu hình Firebase và đảm bảo trình duyệt không chặn cửa sổ pop-up.`);
@@ -97,7 +96,6 @@ document.addEventListener('DOMContentLoaded', function() {
     auth.onAuthStateChanged(user => {
         if (user) {
             // User is signed in
-            console.log("Auth state changed: User is signed in.", user);
             loginView.style.display = 'none';
             mainHeader.style.display = 'block';
             appContainer.style.display = 'block';
@@ -110,7 +108,6 @@ document.addEventListener('DOMContentLoaded', function() {
             initializeAppState();
         } else {
             // User is signed out
-            console.log("Auth state changed: User is signed out.");
             loginView.style.display = 'flex';
             mainHeader.style.display = 'none';
             appContainer.style.display = 'none';
@@ -324,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         row.innerHTML = `
             <td data-label="STT"></td>
             <td data-label="Nội dung"><div class="content-cell">
-                <input type="text" class="item-name" placeholder="Tên hạng mục, sản phẩm..." value="${itemData.name || ''}">
+                <input type="text" class="item-name" placeholder="Tên hạng mục, sản phẩm..." value="${itemData.name || ''}" autocomplete="off">
                 <div class="dimensions-wrapper">
                     <label>K.thước (m):</label>
                     <input type="number" class="dimension dim-d" value="${itemData.dimD || 0}" min="0" step="0.01" title="Dài (m)" placeholder="Dài">
@@ -338,7 +335,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <td data-label="SL"><input type="number" class="quantity" value="${itemData.quantity || 1}" min="1"></td>
             <td data-label="Đơn giá"><input type="text" class="price" value="${itemData.price || 0}" inputmode="numeric"></td>
             <td data-label="Thành tiền" class="line-total text-right">0</td>
-            <td class="actions"><button class="delete-btn" title="Xóa dòng" aria-label="Xóa dòng">&times;</button></td>`;
+            <td class="actions"><button class="delete-btn" title="Xóa dòng" aria-label="Xóa dòng"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></td>`;
         const textarea = row.querySelector('.item-spec');
         textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = (textarea.scrollHeight) + 'px'; });
         setTimeout(() => textarea.dispatchEvent(new Event('input')), 0);
@@ -351,7 +348,7 @@ document.addEventListener('DOMContentLoaded', function() {
         row.className = 'category-header';
         row.innerHTML = `
             <td colspan="7"><input type="text" placeholder="Nhập tên nhóm hạng mục..."></td>
-            <td class="actions"><button class="delete-btn" title="Xóa danh mục" aria-label="Xóa danh mục và các hạng mục con">&times;</button></td>`;
+            <td class="actions"><button class="delete-btn" title="Xóa danh mục" aria-label="Xóa danh mục và các hạng mục con"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></td>`;
         return row;
     }
 
@@ -404,10 +401,17 @@ document.addEventListener('DOMContentLoaded', function() {
         saveQuoteBtn.addEventListener('click', handleSaveQuote);
         clearQuoteBtn.addEventListener('click', handleClearQuote);
         
-        editorView.addEventListener('input', (e) => {
-            if (e.target.classList.contains('price')) formatPriceInput(e.target);
-            updateTotals();
+        editorView.addEventListener('input', handleEditorInput);
+        editorView.addEventListener('focusin', handleAutocompleteFocus);
+        editorView.addEventListener('keydown', handleAutocompleteKeydown);
+        editorView.addEventListener('focusout', handleAutocompleteBlur);
+        
+        autocompleteBox.addEventListener('mousedown', (e) => {
+            // This prevents the input from losing focus (and the box from closing)
+            // when clicking on the scrollbar or an item in the autocomplete box.
+            e.preventDefault();
         });
+
 
         addRowBtn.addEventListener('click', () => { tableBody.appendChild(createItemRowDOM()); updateRowNumbers(); updateTotals(); });
         addCategoryBtn.addEventListener('click', () => { tableBody.appendChild(createCategoryRowDOM()); updateTotals(); });
@@ -446,6 +450,21 @@ document.addEventListener('DOMContentLoaded', function() {
         selectItemModal.addEventListener('click', (e) => { if (e.target === selectItemModal) closeSelectItemModal(); });
         searchSavedItemsInput.addEventListener('input', (e) => renderSelectableItems(managedItems, e.target.value));
         selectItemList.addEventListener('click', handleSelectableItemClick);
+    }
+    
+    function handleEditorInput(e) {
+        // Autocomplete logic
+        if (e.target.matches('.item-name')) {
+            handleAutocompleteInput(e.target);
+        }
+
+        // Price formatting
+        if (e.target.classList.contains('price')) {
+            formatPriceInput(e.target);
+        }
+
+        // Always update totals on any input in the editor
+        updateTotals();
     }
 
     // --- Quote Actions ---
@@ -666,5 +685,140 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTotals();
             closeSelectItemModal();
         }
+    }
+    
+    // --- Autocomplete Logic ---
+    function handleAutocompleteFocus(e) {
+        if (e.target.matches('.item-name')) {
+            activeAutocompleteInput = e.target;
+            if (e.target.value.trim().length > 0) {
+                handleAutocompleteInput(e.target);
+            }
+        }
+    }
+
+    function handleAutocompleteInput(inputElement) {
+        const value = inputElement.value.trim().toLowerCase();
+        if (value.length === 0) {
+            hideAutocomplete();
+            return;
+        }
+        const filteredItems = managedItems.filter(item =>
+            item.name.toLowerCase().includes(value)
+        );
+        if (filteredItems.length > 0) {
+            showAutocomplete(filteredItems, inputElement);
+        } else {
+            hideAutocomplete();
+        }
+    }
+
+    function handleAutocompleteKeydown(e) {
+        if (!activeAutocompleteInput || autocompleteBox.style.display === 'none') return;
+        if (!e.target.matches('.item-name')) return;
+
+        const items = autocompleteBox.querySelectorAll('.autocomplete-item');
+        if (items.length === 0) return;
+
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                autocompleteActiveIndex++;
+                if (autocompleteActiveIndex >= items.length) autocompleteActiveIndex = 0;
+                highlightSuggestion();
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                autocompleteActiveIndex--;
+                if (autocompleteActiveIndex < 0) autocompleteActiveIndex = items.length - 1;
+                highlightSuggestion();
+                break;
+            case 'Enter':
+                e.preventDefault();
+                if (autocompleteActiveIndex > -1) {
+                    items[autocompleteActiveIndex].click();
+                } else {
+                    hideAutocomplete();
+                }
+                break;
+            case 'Escape':
+                hideAutocomplete();
+                break;
+        }
+    }
+
+    function handleAutocompleteBlur(e) {
+        if (e.target.matches('.item-name')) {
+            autocompleteHideTimeout = setTimeout(() => {
+                hideAutocomplete();
+            }, 150);
+        }
+    }
+
+    function showAutocomplete(results, inputElement) {
+        clearTimeout(autocompleteHideTimeout);
+        autocompleteBox.innerHTML = '';
+        
+        results.slice(0, 10).forEach(item => { // Limit to 10 suggestions
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.dataset.id = item.id;
+            div.innerHTML = `
+                <p class="item-name">${item.name}</p>
+                <p class="item-details">${formatCurrency(Number(item.price))}đ / ${item.unit}</p>`;
+            div.addEventListener('click', () => {
+                selectAutocompleteItem(item);
+            });
+            autocompleteBox.appendChild(div);
+        });
+
+        const rect = inputElement.getBoundingClientRect();
+        autocompleteBox.style.left = `${rect.left + window.scrollX}px`;
+        autocompleteBox.style.top = `${rect.bottom + window.scrollY}px`;
+        autocompleteBox.style.width = `${rect.width}px`;
+        
+        autocompleteBox.style.display = 'block';
+        autocompleteActiveIndex = -1;
+    }
+
+    function hideAutocomplete() {
+        autocompleteBox.style.display = 'none';
+        activeAutocompleteInput = null;
+        autocompleteActiveIndex = -1;
+    }
+
+    function highlightSuggestion() {
+        const items = autocompleteBox.querySelectorAll('.autocomplete-item');
+        items.forEach((item, index) => {
+            if (index === autocompleteActiveIndex) {
+                item.classList.add('active');
+                item.scrollIntoView({ block: 'nearest' });
+            } else {
+                item.classList.remove('active');
+            }
+        });
+    }
+
+    function selectAutocompleteItem(item) {
+        if (!activeAutocompleteInput) return;
+        clearTimeout(autocompleteHideTimeout);
+
+        const row = activeAutocompleteInput.closest('tr');
+        if (row) {
+            row.querySelector('.item-name').value = item.name;
+            
+            const specTextarea = row.querySelector('.item-spec');
+            specTextarea.value = item.spec || '';
+            specTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+            row.querySelector('td[data-label="Đơn vị"] input').value = item.unit || 'cái';
+            
+            const priceInput = row.querySelector('.price');
+            priceInput.value = item.price || '0';
+            priceInput.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+
+        hideAutocomplete();
+        activeAutocompleteInput.focus();
     }
 });
