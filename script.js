@@ -374,7 +374,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = document.createElement('tr');
         row.className = 'category-header';
         row.innerHTML = `
-            <td colspan="7"><input type="text" placeholder="Nhập tên nhóm hạng mục..."></td>
+            <td colspan="6"><input type="text" placeholder="Nhập tên nhóm hạng mục..."></td>
+            <td class="category-total text-right" data-label="Thành tiền nhóm">0</td>
             <td class="actions"><button class="delete-btn" title="Xóa danh mục" aria-label="Xóa danh mục và các hạng mục con"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></td>`;
         return row;
     }
@@ -397,6 +398,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     function updateTotals() {
         let grandSubtotal = 0;
+    
+        // First pass: calculate all individual item totals and the grand subtotal.
         tableBody.querySelectorAll('tr.item-row').forEach(row => {
             const length = parseFloat(row.querySelector('.dim-d').value) || 0;
             const height = parseFloat(row.querySelector('.dim-c').value) || 0;
@@ -409,6 +412,33 @@ document.addEventListener('DOMContentLoaded', function() {
             row.querySelector('.line-total').textContent = formatCurrency(lineTotal);
             grandSubtotal += lineTotal;
         });
+    
+        // Second pass: iterate through all rows to find categories and sum up following items.
+        const rows = Array.from(tableBody.children);
+        for (let i = 0; i < rows.length; i++) {
+            if (rows[i].classList.contains('category-header')) {
+                let categorySubtotal = 0;
+                // Look ahead for item rows belonging to this category.
+                for (let j = i + 1; j < rows.length; j++) {
+                    const nextRow = rows[j];
+                    if (nextRow.classList.contains('item-row')) {
+                        const quantity = parseFloat(nextRow.querySelector('.quantity').value) || 0;
+                        const price = parseFloat((nextRow.querySelector('.price').value || '0').replace(/\./g, '')) || 0;
+                        categorySubtotal += quantity * price;
+                    } else if (nextRow.classList.contains('category-header')) {
+                        // Found the next category, so this one is done.
+                        break;
+                    }
+                }
+                // Update the total cell for the current category.
+                const totalElement = rows[i].querySelector('.category-total');
+                if (totalElement) {
+                    totalElement.textContent = formatCurrency(categorySubtotal);
+                }
+            }
+        }
+    
+        // Final summary calculation at the bottom of the page.
         const taxRate = (parseFloat(vatRateInput.value) || 0) / 100;
         const tax = grandSubtotal * taxRate;
         const grandTotal = grandSubtotal + tax;
