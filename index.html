@@ -12,17 +12,34 @@
 </head>
 <body>
 
-    <header class="main-header no-print">
+    <div id="login-view">
+        <div class="login-box">
+            <h1 class="logo">Báo Giá Pro</h1>
+            <p>Đăng nhập để quản lý và đồng bộ báo giá của bạn</p>
+            <button id="login-btn">
+                <svg aria-hidden="true" focusable="false" data-prefix="fab" data-icon="google" class="svg-inline--fa fa-google fa-w-16" role="img" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 488 512"><path fill="currentColor" d="M488 261.8C488 403.3 391.1 504 248 504 110.8 504 0 393.2 0 256S110.8 8 248 8c66.8 0 126 23.4 172.9 61.9l-69.2 69.2c-20.3-18.4-46.4-29.2-76.9-29.2-60.2 0-109 48.8-109 109s48.8 109 109 109c63.4 0 113.3-44.5 120-103.3H248v-85.3h236.1c2.3 12.7 3.9 26.1 3.9 40.2z"></path></svg>
+                Đăng nhập với Google
+            </button>
+        </div>
+    </div>
+
+    <header class="main-header no-print" style="display: none;">
         <div class="header-content">
             <a href="#" class="logo">Báo Giá Pro</a>
             <nav class="main-nav">
                 <button id="nav-editor" class="nav-btn active">Soạn Thảo</button>
                 <button id="nav-list" class="nav-btn">Danh Sách</button>
+                <button id="nav-management" class="nav-btn">Quản lý</button>
             </nav>
+            <div id="user-profile" style="display: none;">
+                 <span id="user-name"></span>
+                 <img id="user-avatar" src="" alt="User Avatar">
+                 <button id="logout-btn" title="Đăng xuất">Đăng xuất</button>
+            </div>
         </div>
     </header>
 
-    <main id="app-container">
+    <main id="app-container" style="display: none;">
         <div id="editor-view">
             <div id="editor-title-bar" class="no-print">
                 <label for="quote-name-input">Tên báo giá:</label>
@@ -97,6 +114,7 @@
                 <div class="table-actions no-print">
                     <button id="add-row">+ Thêm Hạng Mục</button>
                     <button id="add-category">+ Thêm Nhóm</button>
+                    <button id="add-from-saved">+ Thêm từ mục đã lưu</button>
                 </div>
 
                 <footer class="quote-footer">
@@ -131,6 +149,34 @@
             </div>
         </div>
 
+        <div id="management-view" class="no-print" style="display: none;">
+             <div class="list-view-header">
+                <h2>Quản lý Hạng mục/Sản phẩm</h2>
+            </div>
+            <div class="management-content">
+                <div class="management-form-container">
+                    <h3 id="management-form-title">Thêm Hạng mục mới</h3>
+                    <form id="add-item-form">
+                        <input type="text" id="item-form-name" placeholder="Tên hạng mục, sản phẩm..." required>
+                        <textarea id="item-form-spec" placeholder="Quy cách, mô tả chi tiết..." rows="2"></textarea>
+                        <div class="form-row">
+                            <input type="text" id="item-form-unit" placeholder="Đơn vị (cái, m², ...)" value="cái" required>
+                            <input type="text" id="item-form-price" placeholder="Đơn giá" inputmode="numeric" required>
+                        </div>
+                         <input type="hidden" id="item-form-id">
+                        <button type="submit" id="item-form-submit-btn" class="btn-primary">Lưu Hạng Mục</button>
+                        <button type="button" id="item-form-cancel-btn" style="display: none;">Hủy</button>
+                    </form>
+                </div>
+                <div class="management-list-container">
+                    <h3>Hạng mục đã lưu</h3>
+                    <div id="saved-items-list">
+                         <p class="empty-list-message">Chưa có hạng mục nào được lưu.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <div id="confirm-modal" class="modal-overlay no-print" style="display: none;">
@@ -148,8 +194,28 @@
         </div>
     </div>
 
+    <div id="select-item-modal" class="modal-overlay no-print" style="display: none;">
+        <div class="modal-content" role="dialog" aria-labelledby="select-item-title">
+            <div class="modal-header">
+                <h2 id="select-item-title">Chọn hạng mục để thêm</h2>
+                 <button class="close-modal-btn" aria-label="Close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="search" id="search-saved-items-input" class="search-modal-input" placeholder="Tìm kiếm hạng mục...">
+                <div id="select-item-list">
+                    <!-- List of saved items for selection -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div id="save-indicator" class="no-print">Đã lưu ✓</div>
 
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.17.1/firebase-firestore-compat.js"></script>
+    
     <script src="script.js" defer></script>
 </body>
 </html>
