@@ -73,10 +73,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectItemList = document.getElementById('select-item-list');
     const searchSavedItemsInput = document.getElementById('search-saved-items-input');
 
+    // --- Event Listeners Setup ---
+    // Setup login listener immediately on load
+    if (loginBtn) {
+        console.log("Login button found. Attaching click listener.");
+        loginBtn.addEventListener('click', () => {
+            console.log("Login button clicked! Attempting to sign in with Google...");
+            auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
+                .then((result) => {
+                    console.log("Sign-in successful!", result.user);
+                })
+                .catch(err => {
+                    console.error("Login failed with an error:", err);
+                    alert(`Đăng nhập thất bại.\n\nMã lỗi: ${err.code}\nThông báo: ${err.message}\n\nVui lòng kiểm tra lại cấu hình Firebase và đảm bảo trình duyệt không chặn cửa sổ pop-up.`);
+                });
+        });
+    } else {
+        console.error("FATAL: Login button with id 'login-btn' not found in the DOM.");
+    }
+    setupGlobalEventListeners(); // Setup all other listeners
+
     // --- Authentication ---
     auth.onAuthStateChanged(user => {
         if (user) {
             // User is signed in
+            console.log("Auth state changed: User is signed in.", user);
             loginView.style.display = 'none';
             mainHeader.style.display = 'block';
             appContainer.style.display = 'block';
@@ -89,6 +110,7 @@ document.addEventListener('DOMContentLoaded', function() {
             initializeAppState();
         } else {
             // User is signed out
+            console.log("Auth state changed: User is signed out.");
             loginView.style.display = 'flex';
             mainHeader.style.display = 'none';
             appContainer.style.display = 'none';
@@ -113,7 +135,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function initializeAppState() {
         loadQuotes();
         loadManagedItems();
-        setupGlobalEventListeners();
         updateDate();
         showEditorView(); // Default to editor view
     }
@@ -374,7 +395,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // --- Event Handlers ---
     function setupGlobalEventListeners() {
-        loginBtn.addEventListener('click', () => { auth.signInWithPopup(new firebase.auth.GoogleAuthProvider()).catch(err => console.error("Login failed:", err)); });
         logoutBtn.addEventListener('click', () => { auth.signOut().catch(err => console.error("Logout failed:", err)); });
 
         navEditor.addEventListener('click', showEditorView);
