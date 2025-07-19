@@ -189,14 +189,6 @@ tbody tr:not(.category-header):hover { background-color: #f9fafb; }
 
 .text-right { text-align: right; }
 
-tfoot { font-size: 1.05em; font-weight: 500; }
-tfoot td { border: none; padding: 10px 10px; vertical-align: middle; }
-tfoot tr:first-child td { padding-top: 1rem; border-top: 2px solid var(--border-color); }
-tfoot td.total-label { text-align: right; padding-right: 20px; color: var(--text-muted); font-weight: 500; }
-tfoot .total-value { text-align: right; font-weight: 700; white-space: nowrap; }
-tfoot .grand-total-label { font-weight: 700; font-size: 1.1em; color: var(--text-color); }
-tfoot #grand-total { color: var(--primary-color); font-size: 1.25em; font-weight: 700; }
-
 input[type="text"], input[type="number"], textarea.item-spec {
     width: 100%; border: none; padding: 6px 2px; box-sizing: border-box;
     background-color: transparent; font-family: inherit; font-size: 1em; border-radius: 4px;
@@ -239,6 +231,48 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 }
 .dimensions-wrapper input[type="number"]:focus { background-color: var(--primary-color-light); border-color: var(--primary-color); }
 .dimensions-wrapper span { color: var(--text-muted); }
+
+/* --- Totals Summary --- */
+.quote-summary {
+    width: 50%;
+    margin-left: auto; /* Push to the right */
+    margin-top: 1.5rem;
+    font-size: 1.05em;
+    font-weight: 500;
+}
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+}
+.summary-item:first-child {
+    padding-top: 1rem;
+    border-top: 2px solid var(--border-color);
+}
+.summary-item:last-child {
+    border-bottom: none;
+}
+.summary-label {
+    color: var(--text-muted);
+    font-weight: 500;
+}
+.summary-value {
+    text-align: right;
+    font-weight: 700;
+    white-space: nowrap;
+}
+.grand-total .summary-label {
+    font-weight: 700;
+    font-size: 1.1em;
+    color: var(--text-color);
+}
+.grand-total .summary-value {
+    color: var(--primary-color);
+    font-size: 1.25em;
+    font-weight: 700;
+}
 
 #vat-rate {
     width: 50px; border: 1px solid var(--border-color); border-radius: 4px;
@@ -286,9 +320,18 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 /* --- Controls --- */
 .controls { margin-top: 2rem; display: flex; gap: 1rem; justify-content: center; }
 .controls button {
-    padding: 12px 24px; font-size: 1rem; cursor: pointer;
-    color: var(--white); border: none; border-radius: var(--border-radius);
-    font-weight: 600; transition: all var(--transition-speed); box-shadow: var(--shadow);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    font-size: 1rem;
+    cursor: pointer;
+    color: var(--white);
+    border: none;
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    transition: all var(--transition-speed);
+    box-shadow: var(--shadow);
 }
 .controls button:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
 .controls button:active { transform: scale(0.98); }
@@ -618,6 +661,9 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
         width: 100%; max-width: 100%; min-height: initial; box-shadow: none;
         margin: 0; padding: 0; border: none; border-radius: 0;
     }
+    .quote-summary {
+        page-break-inside: avoid;
+    }
     th, .category-header td { background-color: #f2f2f2 !important; -webkit-print-color-adjust: exact; }
     input, textarea { border: none !important; color: #000 !important; padding: 2px 0; }
     td, th { padding: 8px 4px; font-size: 9.5pt; }
@@ -656,6 +702,7 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     .login-box { padding: 2rem; width: 100%; margin: 1rem; box-sizing: border-box; }
     #search-quotes-input, #search-managed-items-input { min-width: unset; }
     .management-list-header { flex-direction: column; align-items: stretch; gap: 1rem; }
+    .quote-summary { width: 100%; }
     
     /* Responsive Table */
     #quote-table thead { display: none; }
@@ -676,11 +723,6 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     #quote-table td[data-label="Nội dung"]:before { margin-bottom: 10px; }
     .category-header { padding: 0; }
     .category-header td { width: 100%; box-sizing: border-box; }
-    tfoot tr { 
-        display: flex; justify-content: space-between; padding: 12px 10px; 
-        border-bottom: 1px solid var(--border-color); 
-    }
-    tfoot td { display: contents; }
     .quote-footer { flex-direction: column; }
     .signature { text-align: left; margin-top: 20px; }
 }
