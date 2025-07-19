@@ -3,12 +3,12 @@ document.addEventListener('DOMContentLoaded', function() {
     // IMPORTANT: Replace with your own Firebase project configuration
     const firebaseConfig = {
         apiKey: "AIzaSyDFhW2GT1e4hx7GGed9QuBseG0hRZx2uVI",
-  authDomain: "quota-96ee4.firebaseapp.com",
-  projectId: "quota-96ee4",
-  storageBucket: "quota-96ee4.firebasestorage.app",
-  messagingSenderId: "394287063195",
-  appId: "1:394287063195:web:0e0fd8c50b562a73cce63e",
-  measurementId: "G-JTYHFWD3L1"
+        authDomain: "quota-96ee4.firebaseapp.com",
+        projectId: "quota-96ee4",
+        storageBucket: "quota-96ee4.firebasestorage.app",
+        messagingSenderId: "394287063195",
+        appId: "1:394287063195:web:0e0fd8c50b562a73cce63e",
+        measurementId: "G-JTYHFWD3L1"
     };
 
     // --- Firebase Initialization ---
@@ -29,6 +29,13 @@ document.addEventListener('DOMContentLoaded', function() {
     let activeAutocompleteInput = null;
     let autocompleteActiveIndex = -1;
     let autocompleteHideTimeout;
+    // New state for pagination and filtering
+    let quotesCurrentPage = 1;
+    const quotesPerPage = 5;
+    let managedItemsCurrentPage = 1;
+    const managedItemsPerPage = 10;
+    let currentFilteredQuotes = [];
+    let currentFilteredManagedItems = [];
 
     // --- DOM Elements ---
     const loginView = document.getElementById('login-view');
@@ -58,12 +65,15 @@ document.addEventListener('DOMContentLoaded', function() {
     const savedQuotesContainer = document.getElementById('saved-quotes-container');
     const searchQuotesInput = document.getElementById('search-quotes-input');
     const createNewQuoteFromListBtn = document.getElementById('create-new-quote-from-list');
+    const quotesPaginationContainer = document.getElementById('quotes-pagination');
 
     const addItemForm = document.getElementById('add-item-form');
     const savedItemsList = document.getElementById('saved-items-list');
     const managementFormTitle = document.getElementById('management-form-title');
     const itemFormSubmitBtn = document.getElementById('item-form-submit-btn');
     const itemFormCancelBtn = document.getElementById('item-form-cancel-btn');
+    const searchManagedItemsInput = document.getElementById('search-managed-items-input');
+    const managedItemsPaginationContainer = document.getElementById('managed-items-pagination');
 
     const confirmModal = document.getElementById('confirm-modal');
     const confirmTitle = document.getElementById('confirm-title');
@@ -140,8 +150,8 @@ document.addEventListener('DOMContentLoaded', function() {
         unsubscribeQuotes = quotesCollection
             .orderBy('lastModified', 'desc')
             .onSnapshot(async (snapshot) => {
-                if (snapshot.empty) {
-                    await addNewQuote(false); // Create first quote if none exist
+                if (snapshot.empty && quotes.length === 0) {
+                    await addNewQuote(false); // Create first quote if none exist and it's the very first load
                     return;
                 }
                 
@@ -152,12 +162,12 @@ document.addEventListener('DOMContentLoaded', function() {
                     activeQuoteId = quotes[0]?.id;
                 }
 
-                if (activeQuoteId) {
+                if (activeQuoteId && editorView.style.display !== 'none') {
                     renderQuote(activeQuoteId);
                 }
                 
                 if (listView.style.display !== 'none') {
-                    renderSavedQuotes(quotes);
+                    handleSearchQuotes({ target: searchQuotesInput });
                 }
             }, error => {
                 console.error("Error loading quotes:", error);
@@ -171,10 +181,10 @@ document.addEventListener('DOMContentLoaded', function() {
             .onSnapshot((snapshot) => {
                 managedItems = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                 if (managementView.style.display !== 'none') {
-                    renderManagedItems(managedItems);
+                    handleSearchManagedItems({ target: searchManagedItemsInput });
                 }
                  if (selectItemModal.style.display !== 'none') {
-                    renderSelectableItems(managedItems);
+                    renderSelectableItems(managedItems, searchSavedItemsInput.value);
                 }
             }, error => {
                 console.error("Error loading managed items:", error);
@@ -257,14 +267,31 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function showEditorView() { showView(editorView); }
-    function showListView() { handleSaveQuote(); renderSavedQuotes(quotes); searchQuotesInput.value = ''; showView(listView); }
-    function showManagementView() { renderManagedItems(managedItems); showView(managementView); }
+    function showListView() { 
+        handleSaveQuote(); 
+        searchQuotesInput.value = '';
+        renderSavedQuotes(quotes); 
+        showView(listView); 
+    }
+    function showManagementView() { 
+        searchManagedItemsInput.value = '';
+        renderManagedItems(managedItems); 
+        showView(managementView); 
+    }
 
 
     // --- Rendering ---
     function renderQuote(quoteIdToRender) {
         const quote = quotes.find(q => q.id === quoteIdToRender);
-        if (!quote) return;
+        if (!quote) {
+             if (quotes.length > 0) {
+                activeQuoteId = quotes[0].id;
+                renderQuote(activeQuoteId);
+             } else {
+                addNewQuote();
+             }
+             return;
+        }
 
         quoteNameInput.value = quote.name || '';
         const company = quote.company || {};
@@ -407,11 +434,8 @@ document.addEventListener('DOMContentLoaded', function() {
         editorView.addEventListener('focusout', handleAutocompleteBlur);
         
         autocompleteBox.addEventListener('mousedown', (e) => {
-            // This prevents the input from losing focus (and the box from closing)
-            // when clicking on the scrollbar or an item in the autocomplete box.
             e.preventDefault();
         });
-
 
         addRowBtn.addEventListener('click', () => { tableBody.appendChild(createItemRowDOM()); updateRowNumbers(); updateTotals(); });
         addCategoryBtn.addEventListener('click', () => { tableBody.appendChild(createCategoryRowDOM()); updateTotals(); });
@@ -435,7 +459,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         createNewQuoteFromListBtn.addEventListener('click', () => { addNewQuote(); showEditorView(); });
-        searchQuotesInput.addEventListener('input', handleSearch);
+        searchQuotesInput.addEventListener('input', handleSearchQuotes);
         savedQuotesContainer.addEventListener('click', handleQuoteListClick);
 
         confirmCancelBtn.addEventListener('click', hideConfirmModal);
@@ -450,20 +474,20 @@ document.addEventListener('DOMContentLoaded', function() {
         selectItemModal.addEventListener('click', (e) => { if (e.target === selectItemModal) closeSelectItemModal(); });
         searchSavedItemsInput.addEventListener('input', (e) => renderSelectableItems(managedItems, e.target.value));
         selectItemList.addEventListener('click', handleSelectableItemClick);
+
+        // Pagination and new filters
+        searchManagedItemsInput.addEventListener('input', handleSearchManagedItems);
+        quotesPaginationContainer.addEventListener('click', handleQuotesPaginationClick);
+        managedItemsPaginationContainer.addEventListener('click', handleManagedItemsPaginationClick);
     }
     
     function handleEditorInput(e) {
-        // Autocomplete logic
         if (e.target.matches('.item-name')) {
             handleAutocompleteInput(e.target);
         }
-
-        // Price formatting
         if (e.target.classList.contains('price')) {
             formatPriceInput(e.target);
         }
-
-        // Always update totals on any input in the editor
         updateTotals();
     }
 
@@ -476,7 +500,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const docRef = await quotesCollection.add(newQuote);
             activeQuoteId = docRef.id;
             if (doSwitchToEditor) {
-                renderQuote(activeQuoteId); // Manually render because listener might not have fired yet
+                // The listener will pick up the change and render it
                 showEditorView();
             }
         } catch (error) {
@@ -484,14 +508,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function deleteQuote(quoteId, fromListView = false) {
+    function deleteQuote(quoteId) {
         const quoteToDelete = quotes.find(q => q.id === quoteId);
         if (!quoteToDelete) return;
         showConfirmModal('Xác nhận xóa', `Bạn có chắc chắn muốn xóa vĩnh viễn báo giá "${quoteToDelete.name}" không?`, async () => {
             try {
                 await quotesCollection.doc(quoteId).delete();
                 if (activeQuoteId === quoteId) {
-                    activeQuoteId = null; // Let the listener pick the next one
+                    activeQuoteId = null; 
                 }
                 // The onSnapshot listener will handle re-rendering the list.
             } catch (error) {
@@ -505,9 +529,15 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentQuote = quotes.find(q => q.id === activeQuoteId);
             if (!currentQuote) return;
             const blankQuoteTemplate = createNewQuoteObject();
-            const clearedQuote = { ...blankQuoteTemplate, id: currentQuote.id, name: currentQuote.name, company: currentQuote.company, quoteNumber: currentQuote.quoteNumber };
-            renderQuote(currentQuote.id); // Re-render first
-            quotesCollection.doc(currentQuote.id).set(clearedQuote, { merge: true }).then(handleSaveQuote);
+            const clearedQuoteData = { ...blankQuoteTemplate, name: currentQuote.name, company: currentQuote.company, quoteNumber: currentQuote.quoteNumber };
+            
+            // Apply changes to the object in Firestore
+            quotesCollection.doc(currentQuote.id).set(clearedQuoteData, { merge: true })
+                .then(() => {
+                    // Then re-render the editor with the cleared data from local state to feel instant
+                     renderQuote(currentQuote.id);
+                })
+                .catch(err => console.error("Error clearing quote:", err));
         });
     }
 
@@ -517,19 +547,28 @@ document.addEventListener('DOMContentLoaded', function() {
         confirmMessage.textContent = message;
         confirmCallback = onConfirm;
         confirmOkBtn.className = 'btn-danger';
-        confirmOkBtn.textContent = title.includes('xóa') ? 'Xóa' : 'Xác nhận';
+        confirmOkBtn.textContent = title.includes('xóa') || title.includes('Xóa') ? 'Xóa' : 'Xác nhận';
         if(title.includes('Làm trống')) confirmOkBtn.textContent = 'Làm Trống';
         confirmModal.style.display = 'flex';
     }
     function hideConfirmModal() { confirmModal.style.display = 'none'; confirmCallback = null; }
 
-    function renderSavedQuotes(quotesToRender) {
+    function renderSavedQuotes(quotesToRender, page = 1) {
+        currentFilteredQuotes = quotesToRender; // Store the full filtered list for pagination
+        quotesCurrentPage = page;
+
         savedQuotesContainer.innerHTML = '';
         if (!quotesToRender || quotesToRender.length === 0) {
-            savedQuotesContainer.innerHTML = '<p class="empty-list-message">Không có báo giá nào. Hãy tạo một báo giá mới!</p>';
+            savedQuotesContainer.innerHTML = '<p class="empty-list-message">Không tìm thấy báo giá nào.</p>';
+            renderPaginationControls(quotesPaginationContainer, 0, 0, quotesPerPage);
             return;
         }
-        quotesToRender.forEach(quote => {
+        
+        const startIndex = (page - 1) * quotesPerPage;
+        const endIndex = startIndex + quotesPerPage;
+        const paginatedQuotes = quotesToRender.slice(startIndex, endIndex);
+
+        paginatedQuotes.forEach(quote => {
             const card = document.createElement('div');
             card.className = 'quote-card';
             card.dataset.id = quote.id;
@@ -537,18 +576,32 @@ document.addEventListener('DOMContentLoaded', function() {
             const clientName = quote.client?.name ? `<strong>Khách hàng:</strong> ${quote.client.name}` : '<em>Chưa có khách hàng</em>';
             card.innerHTML = `
                 <div class="quote-card-info">
-                    <h3 class="quote-card-name">${quote.name}</h3><p class="quote-card-details">${clientName}</p>
+                    <h3 class="quote-card-name">${quote.name}</h3>
+                    <p class="quote-card-details">${clientName}</p>
                     <p class="quote-card-meta">Số: ${quote.quoteNumber} &bull; Sửa lần cuối: ${lastModifiedDate}</p>
                 </div>
-                <div class="quote-card-actions"><button class="btn-open">Mở</button><button class="btn-delete">Xóa</button></div>`;
+                <div class="quote-card-actions">
+                    <button class="btn-open" title="Mở báo giá" aria-label="Mở báo giá">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    </button>
+                    <button class="btn-delete" title="Xóa báo giá" aria-label="Xóa báo giá">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                </div>`;
             savedQuotesContainer.appendChild(card);
         });
+
+        renderPaginationControls(quotesPaginationContainer, page, quotesToRender.length, quotesPerPage);
     }
     
-    function handleSearch(e) {
+    function handleSearchQuotes(e) {
         const searchTerm = e.target.value.toLowerCase().trim();
-        const filteredQuotes = quotes.filter(q => q.name.toLowerCase().includes(searchTerm) || (q.client && q.client.name.toLowerCase().includes(searchTerm)) || q.quoteNumber.toLowerCase().includes(searchTerm));
-        renderSavedQuotes(filteredQuotes);
+        const filteredQuotes = quotes.filter(q => 
+            q.name.toLowerCase().includes(searchTerm) || 
+            (q.client && q.client.name.toLowerCase().includes(searchTerm)) || 
+            q.quoteNumber.toLowerCase().includes(searchTerm)
+        );
+        renderSavedQuotes(filteredQuotes, 1);
     }
 
     function handleQuoteListClick(e) {
@@ -556,18 +609,27 @@ document.addEventListener('DOMContentLoaded', function() {
         const quoteCard = target.closest('.quote-card');
         if (!quoteCard) return;
         const quoteId = quoteCard.dataset.id;
-        if (target.matches('.btn-open')) switchQuote(quoteId);
-        else if (target.matches('.btn-delete')) deleteQuote(quoteId, true);
+        if (target.closest('.btn-open')) switchQuote(quoteId);
+        else if (target.closest('.btn-delete')) deleteQuote(quoteId);
     }
     
     // --- Management View ---
-    function renderManagedItems(items) {
+    function renderManagedItems(items, page = 1) {
+        currentFilteredManagedItems = items;
+        managedItemsCurrentPage = page;
+        
         savedItemsList.innerHTML = '';
         if (items.length === 0) {
-            savedItemsList.innerHTML = '<p class="empty-list-message">Chưa có hạng mục nào được lưu.</p>';
+            savedItemsList.innerHTML = '<p class="empty-list-message">Không tìm thấy hạng mục nào.</p>';
+            renderPaginationControls(managedItemsPaginationContainer, 0, 0, managedItemsPerPage);
             return;
         }
-        items.forEach(item => {
+
+        const startIndex = (page - 1) * managedItemsPerPage;
+        const endIndex = startIndex + managedItemsPerPage;
+        const paginatedItems = items.slice(startIndex, endIndex);
+
+        paginatedItems.forEach(item => {
             const itemCard = document.createElement('div');
             itemCard.className = 'managed-item-card';
             itemCard.dataset.id = item.id;
@@ -580,11 +642,26 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span class="item-card-price">${formatCurrency(Number(item.price))}đ</span> / ${item.unit}
                 </div>
                 <div class="item-card-actions">
-                    <button class="btn-edit-item">Sửa</button>
-                    <button class="btn-delete-item">Xóa</button>
+                    <button class="btn-edit-item" title="Sửa hạng mục" aria-label="Sửa hạng mục">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                    </button>
+                    <button class="btn-delete-item" title="Xóa hạng mục" aria-label="Xóa hạng mục">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
                 </div>`;
             savedItemsList.appendChild(itemCard);
         });
+
+        renderPaginationControls(managedItemsPaginationContainer, page, items.length, managedItemsPerPage);
+    }
+
+    function handleSearchManagedItems(e) {
+        const searchTerm = e.target.value.toLowerCase().trim();
+        const filteredItems = managedItems.filter(i => 
+            i.name.toLowerCase().includes(searchTerm) || 
+            (i.spec && i.spec.toLowerCase().includes(searchTerm))
+        );
+        renderManagedItems(filteredItems, 1);
     }
 
     async function handleManageItemSubmit(e) {
@@ -624,11 +701,11 @@ document.addEventListener('DOMContentLoaded', function() {
         const item = managedItems.find(i => i.id === id);
         if (!item) return;
 
-        if (e.target.matches('.btn-delete-item')) {
+        if (e.target.closest('.btn-delete-item')) {
             showConfirmModal('Xóa Hạng mục?', `Bạn có chắc muốn xóa hạng mục "${item.name}"?`, () => {
                 managedItemsCollection.doc(id).delete().catch(err => console.error("Error deleting item: ", err));
             });
-        } else if (e.target.matches('.btn-edit-item')) {
+        } else if (e.target.closest('.btn-edit-item')) {
             document.getElementById('item-form-id').value = item.id;
             document.getElementById('item-form-name').value = item.name;
             document.getElementById('item-form-spec').value = item.spec;
@@ -641,6 +718,52 @@ document.addEventListener('DOMContentLoaded', function() {
             itemFormCancelBtn.style.display = 'inline-block';
             window.scrollTo(0, 0);
         }
+    }
+
+    // --- Pagination ---
+    function renderPaginationControls(container, currentPage, totalItems, itemsPerPage) {
+        container.innerHTML = '';
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        if (totalPages <= 1) return;
+
+        const prevDisabled = currentPage === 1 ? 'disabled' : '';
+        const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+
+        container.innerHTML = `
+            <button class="pagination-btn" data-action="prev" ${prevDisabled} title="Trang trước" aria-label="Trang trước">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+            </button>
+            <span class="page-info">Trang ${currentPage} / ${totalPages}</span>
+            <button class="pagination-btn" data-action="next" ${nextDisabled} title="Trang sau" aria-label="Trang sau">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+            </button>
+        `;
+    }
+
+    function handleQuotesPaginationClick(e) {
+        const button = e.target.closest('.pagination-btn');
+        if (!button || button.disabled) return;
+
+        const action = button.dataset.action;
+        if (action === 'prev') {
+            quotesCurrentPage--;
+        } else if (action === 'next') {
+            quotesCurrentPage++;
+        }
+        renderSavedQuotes(currentFilteredQuotes, quotesCurrentPage);
+    }
+    
+    function handleManagedItemsPaginationClick(e) {
+        const button = e.target.closest('.pagination-btn');
+        if (!button || button.disabled) return;
+
+        const action = button.dataset.action;
+        if (action === 'prev') {
+            managedItemsCurrentPage--;
+        } else if (action === 'next') {
+            managedItemsCurrentPage++;
+        }
+        renderManagedItems(currentFilteredManagedItems, managedItemsCurrentPage);
     }
 
     // --- Select Item Modal ---

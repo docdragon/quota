@@ -338,21 +338,29 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 .quote-card-name { font-size: 1.25rem; font-weight: 600; margin: 0 0 0.25rem 0; color: var(--text-color); }
 .quote-card-details { margin: 0 0 0.5rem 0; color: var(--text-muted); }
 .quote-card-meta { margin: 0; font-size: 0.9em; color: var(--text-muted); }
-.quote-card-actions { display: flex; gap: 0.5rem; flex-shrink: 0; }
+.quote-card-actions { display: flex; gap: 0.75rem; flex-shrink: 0; }
 .quote-card-actions button {
-    font-size: 0.9rem; padding: 8px 16px; font-weight: 600;
-    border-radius: var(--border-radius); border: 1px solid var(--border-color);
-    cursor: pointer; transition: all var(--transition-speed);
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--text-muted);
 }
-.quote-card-actions .btn-open {
-    background-color: var(--primary-color-light); border-color: var(--primary-color-light);
+.quote-card-actions .btn-open:hover {
+    background-color: var(--primary-color-light);
     color: var(--primary-color);
 }
-.quote-card-actions .btn-open:hover { background-color: var(--primary-color); color: var(--white); }
-.quote-card-actions .btn-delete {
-    background-color: transparent; color: var(--danger-color);
+.quote-card-actions .btn-delete:hover {
+    background-color: #fee2e2;
+    color: var(--danger-color);
 }
-.quote-card-actions .btn-delete:hover { background-color: var(--danger-color); color: var(--white); }
 .empty-list-message { text-align: center; color: var(--text-muted); padding: 3rem; font-size: 1.1rem; }
 
 /* --- Modals & Indicators --- */
@@ -466,9 +474,31 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 #add-item-form .form-row { display: flex; gap: 1rem; }
 #item-form-cancel-btn { background-color: var(--text-muted); color: var(--white); border: none;}
 
-.management-list-container h3 { margin-top: 0; }
-#saved-items-list { display: grid; gap: 1rem; }
+.management-list-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+.management-list-header h3 {
+    margin: 0;
+}
+#search-managed-items-input {
+    min-width: 250px;
+    padding: 8px 12px;
+    font-size: 0.95rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    transition: all var(--transition-speed);
+}
+#search-managed-items-input:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--primary-color-light);
+}
 
+#saved-items-list { display: grid; gap: 1rem; }
 .managed-item-card {
     display: grid; grid-template-columns: 1fr auto auto;
     gap: 1.5rem; align-items: center; padding: 1rem 1.5rem;
@@ -482,14 +512,21 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 .item-card-price { color: var(--success-color); font-weight: 600; }
 .item-card-actions { display: flex; gap: 0.5rem; }
 .item-card-actions button {
-    font-size: 0.9rem; padding: 6px 12px; font-weight: 600;
-    border-radius: var(--border-radius); border: 1px solid var(--border-color);
-    cursor: pointer; transition: all var(--transition-speed);
+    padding: 0;
+    border-radius: 50%;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    color: var(--text-muted);
 }
-.btn-edit-item { background: transparent; color: var(--primary-color); }
-.btn-edit-item:hover { background: var(--primary-color); color: var(--white); }
-.btn-delete-item { background: transparent; color: var(--danger-color); }
-.btn-delete-item:hover { background: var(--danger-color); color: var(--white); }
+.btn-edit-item:hover { background-color: var(--primary-color-light); color: var(--primary-color); }
+.btn-delete-item:hover { background-color: #fee2e2; color: var(--danger-color); }
 
 /* --- Select Item Modal --- */
 .close-modal-btn { background: none; border: none; font-size: 1.8rem; line-height: 1; cursor: pointer; color: var(--text-muted); padding: 0; transition: color var(--transition-speed); }
@@ -535,6 +572,44 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 .autocomplete-item .item-details { font-size: 0.9em; color: var(--text-muted); }
 .autocomplete-item.active .item-details, .autocomplete-item.active .item-name { color: var(--primary-color); }
 
+/* --- Pagination --- */
+.pagination-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+.pagination-btn {
+    background-color: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all var(--transition-speed);
+    color: var(--text-muted);
+}
+.pagination-btn:hover:not(:disabled) {
+    background-color: var(--primary-color-light);
+    color: var(--primary-color);
+    border-color: var(--primary-color-light);
+}
+.pagination-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--background-color);
+}
+.page-info {
+    font-weight: 500;
+    color: var(--text-muted);
+    min-width: 100px;
+    text-align: center;
+}
+
 /* --- Print Styles --- */
 @media print {
     body { background-color: #fff; }
@@ -579,7 +654,8 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     .item-card-details { text-align: center; }
     .item-card-actions { justify-content: center; }
     .login-box { padding: 2rem; width: 100%; margin: 1rem; box-sizing: border-box; }
-    #search-quotes-input { min-width: unset; }
+    #search-quotes-input, #search-managed-items-input { min-width: unset; }
+    .management-list-header { flex-direction: column; align-items: stretch; gap: 1rem; }
     
     /* Responsive Table */
     #quote-table thead { display: none; }

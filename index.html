@@ -161,6 +161,9 @@
             <div id="saved-quotes-container">
                 <!-- Quote cards will be populated by JS -->
             </div>
+            <div id="quotes-pagination" class="pagination-controls">
+                <!-- Pagination controls will be populated by JS -->
+            </div>
         </div>
 
         <div id="management-view" class="no-print" style="display: none;">
@@ -183,9 +186,15 @@
                     </form>
                 </div>
                 <div class="management-list-container">
-                    <h3>Hạng mục đã lưu</h3>
+                    <div class="management-list-header">
+                        <h3>Hạng mục đã lưu</h3>
+                        <input type="search" id="search-managed-items-input" placeholder="Tìm theo tên, mô tả...">
+                    </div>
                     <div id="saved-items-list">
                          <p class="empty-list-message">Chưa có hạng mục nào được lưu.</p>
+                    </div>
+                    <div id="managed-items-pagination" class="pagination-controls">
+                         <!-- Pagination controls will be populated by JS -->
                     </div>
                 </div>
             </div>
