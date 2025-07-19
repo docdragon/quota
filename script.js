@@ -345,6 +345,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function createItemRowDOM(itemData = {}) {
         const row = document.createElement('tr');
         row.className = 'item-row';
+        row.draggable = true;
         row.innerHTML = `
             <td data-label="STT"></td>
             <td data-label="Nội dung"><div class="content-cell">
@@ -447,6 +448,84 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('grand-total').textContent = formatCurrency(grandTotal);
     }
     
+    // --- Drag and Drop Handlers ---
+    let draggedElement = null;
+
+    function handleDragStart(e) {
+        // Only start drag if the source is not an input-like element.
+        // This allows text selection in inputs without accidentally dragging the row.
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+            e.preventDefault();
+            return;
+        }
+
+        draggedElement = e.target.closest('.item-row');
+        if (!draggedElement) return;
+
+        e.dataTransfer.setData('text/plain', null); // Firefox fix
+        e.dataTransfer.effectAllowed = 'move';
+
+        // Use a timeout to avoid the drag image disappearing.
+        setTimeout(() => draggedElement.classList.add('dragging'), 0);
+    }
+
+    function handleDragOver(e) {
+        e.preventDefault();
+        if (!draggedElement) return;
+
+        const overElement = e.target.closest('tr');
+        if (!overElement || overElement === draggedElement) {
+            return;
+        }
+        
+        // Remove all previous indicators to prevent multiple lines.
+        tableBody.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+            el.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+
+        const rect = overElement.getBoundingClientRect();
+        const offset = e.clientY - rect.top;
+
+        // If dragging over a category header, always indicate dropping below it.
+        if (overElement.classList.contains('category-header')) {
+            overElement.classList.add('drag-over-bottom');
+        } else if (offset > rect.height / 2) {
+            overElement.classList.add('drag-over-bottom');
+        } else {
+            overElement.classList.add('drag-over-top');
+        }
+    }
+
+    function handleDrop(e) {
+        e.preventDefault();
+        if (!draggedElement) return;
+
+        const dropZone = e.target.closest('tr');
+        if (dropZone && dropZone !== draggedElement) {
+            if (dropZone.classList.contains('drag-over-bottom')) {
+                dropZone.parentNode.insertBefore(draggedElement, dropZone.nextSibling);
+            } else if (dropZone.classList.contains('drag-over-top')) {
+                dropZone.parentNode.insertBefore(draggedElement, dropZone);
+            }
+        }
+    }
+
+    function handleDragEnd() {
+        if (draggedElement) {
+            draggedElement.classList.remove('dragging');
+        }
+        // Clean up all indicators
+        tableBody.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
+            el.classList.remove('drag-over-top', 'drag-over-bottom');
+        });
+        draggedElement = null;
+        
+        // After any drop, successful or not, recalculate everything.
+        updateRowNumbers();
+        updateTotals();
+    }
+
+
     // --- Event Handlers ---
     function setupGlobalEventListeners() {
         logoutBtn.addEventListener('click', () => { auth.signOut().catch(err => console.error("Logout failed:", err)); });
@@ -487,6 +566,12 @@ document.addEventListener('DOMContentLoaded', function() {
             updateRowNumbers();
             updateTotals();
         });
+
+        // Drag and Drop Listeners for table rows
+        tableBody.addEventListener('dragstart', handleDragStart);
+        tableBody.addEventListener('dragover', handleDragOver);
+        tableBody.addEventListener('drop', handleDrop);
+        tableBody.addEventListener('dragend', handleDragEnd);
 
         createNewQuoteFromListBtn.addEventListener('click', () => { addNewQuote(); showEditorView(); });
         searchQuotesInput.addEventListener('input', handleSearchQuotes);

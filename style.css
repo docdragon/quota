@@ -414,6 +414,26 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 }
 .empty-list-message { text-align: center; color: var(--text-muted); padding: 3rem; font-size: 1.1rem; }
 
+/* --- Drag and Drop Styles --- */
+tr.item-row {
+    cursor: grab;
+}
+tr.item-row.dragging {
+    cursor: grabbing;
+    opacity: 0.5;
+    background: var(--primary-color-light);
+    box-shadow: var(--shadow-md);
+    display: table; /* Prevents cell width from collapsing during drag */
+}
+/* Drop indicator styles */
+tr.drag-over-top {
+    border-top: 3px solid var(--primary-color) !important;
+}
+tr.drag-over-bottom {
+    border-bottom: 3px solid var(--primary-color) !important;
+}
+
+
 /* --- Modals & Indicators --- */
 .modal-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
