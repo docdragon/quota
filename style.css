@@ -655,7 +655,6 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
 
 /* --- Print Styles --- */
 @page {
-    size: A4;
     margin: 0;
 }
 @media print {
@@ -664,7 +663,7 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     .page {
         width: 100%; max-width: 100%; min-height: initial; box-shadow: none;
         margin: 0; border: none; border-radius: 0;
-        padding: 15mm; /* Giảm lề khi in */
+        padding: 10mm; /* Giảm lề khi in */
     }
     .quote-summary {
         page-break-inside: avoid;
