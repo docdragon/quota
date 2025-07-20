@@ -1,3 +1,5 @@
+import { GoogleGenAI } from "@google/genai";
+
 document.addEventListener('DOMContentLoaded', function() {
     // --- Firebase Configuration ---
     // IMPORTANT: Replace with your own Firebase project configuration
@@ -11,12 +13,14 @@ document.addEventListener('DOMContentLoaded', function() {
         measurementId: "G-JTYHFWD3L1"
     };
 
-    // --- Firebase Initialization ---
+    // --- Firebase & AI Initialization ---
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     let quotesCollection;
     let managedItemsCollection;
+    const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+
 
     // --- Global State ---
     let quotes = [];
@@ -86,6 +90,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchSavedItemsInput = document.getElementById('search-saved-items-input');
     
     const autocompleteBox = document.getElementById('autocomplete-box');
+    
+    // New UI elements for customization
+    const logoUploadInput = document.getElementById('logo-upload-input');
+    const companyLogo = document.getElementById('company-logo');
+    const logoPlaceholder = document.getElementById('logo-placeholder');
+    const logoContainer = document.querySelector('.logo-container');
+    const primaryColorPicker = document.getElementById('primary-color-picker');
 
     // --- Event Listeners Setup ---
     // Setup login listener immediately on load
@@ -244,7 +255,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 name: document.getElementById('company-name').value,
                 address: document.getElementById('company-address').value,
                 contact: document.getElementById('company-contact').value,
-                bank: document.getElementById('company-bank').value
+                bank: document.getElementById('company-bank').value,
+                logo: companyLogo.src.startsWith('data:image') ? companyLogo.src : '',
+                primaryColor: primaryColorPicker.value,
             },
             client: { name: document.getElementById('client-name').value, phone: document.getElementById('client-phone').value, address: document.getElementById('client-address').value },
             quoteNumber: document.getElementById('quote-number').value,
@@ -294,11 +307,27 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         quoteNameInput.value = quote.name || '';
+        
         const company = quote.company || {};
         document.getElementById('company-name').value = company.name || '';
         document.getElementById('company-address').value = company.address || '';
         document.getElementById('company-contact').value = company.contact || '';
         document.getElementById('company-bank').value = company.bank || '';
+
+        if (company.logo) {
+            companyLogo.src = company.logo;
+            companyLogo.style.display = 'block';
+            logoPlaceholder.style.display = 'none';
+        } else {
+            companyLogo.src = '';
+            companyLogo.style.display = 'none';
+            logoPlaceholder.style.display = 'flex';
+        }
+    
+        const primaryColor = company.primaryColor || '#4A90E2';
+        primaryColorPicker.value = primaryColor;
+        updatePrimaryColor(primaryColor);
+        
         const client = quote.client || {};
         document.getElementById('client-name').value = client.name || '';
         document.getElementById('client-phone').value = client.phone || '';
@@ -357,6 +386,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>x</span><input type="number" class="dimension dim-c" value="${itemData.dimC || 0}" min="0" step="0.01" title="Cao (m)" placeholder="Cao">
                 </div>
                 <textarea class="item-spec" placeholder="Quy cách, mô tả chi tiết..." rows="1">${itemData.spec || ''}</textarea>
+                <button class="ai-spec-btn" title="Gợi ý mô tả với AI">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M13.864.136a.5.5 0 0 1 .5.5v2.733a.5.5 0 0 1-1 0V1.864l-2.88 2.88a.5.5 0 0 1-.707 0l-.707-.707a.5.5 0 0 1 0-.707l2.88-2.88H8.364a.5.5 0 0 1 0-1h5.5ZM2.136 15.864a.5.5 0 0 1-.5-.5V12.63a.5.5 0 0 1 1 0v1.233l2.88-2.88a.5.5 0 0 1 .707 0l.707.707a.5.5 0 0 1 0 .707l-2.88 2.88h1.233a.5.5 0 0 1 0 1h-5.5Z"/><path d="M5.44 10.56a.5.5 0 0 1 0 .707l-2.88 2.88h1.233a.5.5 0 0 1 0 1h-5.5a.5.5 0 0 1-.5-.5v-5.5a.5.5 0 0 1 1 0v1.233l2.88-2.88a.5.5 0 0 1 .707 0l.707.707a.5.5 0 0 1 0 .707L4.233 9.364H5.44Zm5.12-5.12a.5.5 0 0 1 0-.707l2.88-2.88H12.23a.5.5 0 0 1 0-1h5.5a.5.5 0 0 1 .5.5v5.5a.5.5 0 0 1-1 0V4.233l-2.88 2.88a.5.5 0 0 1-.707 0l-.707-.707a.5.5 0 0 1 0-.707l2.88-2.88H11.77Z"/></svg>
+                    <div class="spinner"></div>
+                </button>
             </div></td>
             <td data-label="Đơn vị"><input type="text" value="${itemData.unit || 'cái'}"></td>
             <td data-label="KL (m²)" class="volume text-right">0.00</td>
@@ -364,6 +397,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <td data-label="Đơn giá"><input type="text" class="price" value="${itemData.price || 0}" inputmode="numeric"></td>
             <td data-label="Thành tiền" class="line-total text-right">0</td>
             <td class="actions"><button class="delete-btn" title="Xóa dòng" aria-label="Xóa dòng"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></td>`;
+        
+        row.querySelector('.ai-spec-btn').addEventListener('click', generateSpecWithAI);
+        
         const textarea = row.querySelector('.item-spec');
         textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = (textarea.scrollHeight) + 'px'; });
         setTimeout(() => textarea.dispatchEvent(new Event('input')), 0);
@@ -388,7 +424,14 @@ document.addEventListener('DOMContentLoaded', function() {
         return {
             name: name,
             lastModified: new Date().toISOString(),
-            company: { name: 'Tên Công Ty Của Bạn', address: 'Địa chỉ', contact: 'Điện thoại | Email', bank: '' },
+            company: { 
+                name: 'Tên Công Ty Của Bạn',
+                address: 'Địa chỉ',
+                contact: 'Điện thoại | Email',
+                bank: '',
+                logo: '',
+                primaryColor: '#4A90E2'
+            },
             client: { name: '', phone: '', address: ''},
             quoteNumber: `BG-${new Date().getFullYear()}-${String(newId).slice(-4)}`,
             vatRate: 10,
@@ -453,7 +496,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleDragStart(e) {
         // Only start drag if the source is not an input-like element.
-        // This allows text selection in inputs without accidentally dragging the row.
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             e.preventDefault();
             return;
@@ -464,8 +506,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         e.dataTransfer.setData('text/plain', null); // Firefox fix
         e.dataTransfer.effectAllowed = 'move';
-
-        // Use a timeout to avoid the drag image disappearing.
         setTimeout(() => draggedElement.classList.add('dragging'), 0);
     }
 
@@ -474,11 +514,8 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!draggedElement) return;
 
         const overElement = e.target.closest('tr');
-        if (!overElement || overElement === draggedElement) {
-            return;
-        }
+        if (!overElement || overElement === draggedElement) return;
         
-        // Remove all previous indicators to prevent multiple lines.
         tableBody.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
             el.classList.remove('drag-over-top', 'drag-over-bottom');
         });
@@ -486,7 +523,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const rect = overElement.getBoundingClientRect();
         const offset = e.clientY - rect.top;
 
-        // If dragging over a category header, always indicate dropping below it.
         if (overElement.classList.contains('category-header')) {
             overElement.classList.add('drag-over-bottom');
         } else if (offset > rect.height / 2) {
@@ -511,16 +547,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleDragEnd() {
-        if (draggedElement) {
-            draggedElement.classList.remove('dragging');
-        }
-        // Clean up all indicators
+        if (draggedElement) draggedElement.classList.remove('dragging');
+        
         tableBody.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
             el.classList.remove('drag-over-top', 'drag-over-bottom');
         });
         draggedElement = null;
-        
-        // After any drop, successful or not, recalculate everything.
         updateRowNumbers();
         updateTotals();
     }
@@ -542,9 +574,7 @@ document.addEventListener('DOMContentLoaded', function() {
         editorView.addEventListener('keydown', handleAutocompleteKeydown);
         editorView.addEventListener('focusout', handleAutocompleteBlur);
         
-        autocompleteBox.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-        });
+        autocompleteBox.addEventListener('mousedown', (e) => e.preventDefault());
 
         addRowBtn.addEventListener('click', () => { tableBody.appendChild(createItemRowDOM()); updateRowNumbers(); updateTotals(); });
         addCategoryBtn.addEventListener('click', () => { tableBody.appendChild(createCategoryRowDOM()); updateTotals(); });
@@ -567,7 +597,6 @@ document.addEventListener('DOMContentLoaded', function() {
             updateTotals();
         });
 
-        // Drag and Drop Listeners for table rows
         tableBody.addEventListener('dragstart', handleDragStart);
         tableBody.addEventListener('dragover', handleDragOver);
         tableBody.addEventListener('drop', handleDrop);
@@ -590,10 +619,14 @@ document.addEventListener('DOMContentLoaded', function() {
         searchSavedItemsInput.addEventListener('input', (e) => renderSelectableItems(managedItems, e.target.value));
         selectItemList.addEventListener('click', handleSelectableItemClick);
 
-        // Pagination and new filters
         searchManagedItemsInput.addEventListener('input', handleSearchManagedItems);
         quotesPaginationContainer.addEventListener('click', handleQuotesPaginationClick);
         managedItemsPaginationContainer.addEventListener('click', handleManagedItemsPaginationClick);
+
+        // Listeners for new UI
+        primaryColorPicker.addEventListener('input', (e) => updatePrimaryColor(e.target.value));
+        logoContainer.addEventListener('click', () => logoUploadInput.click());
+        logoUploadInput.addEventListener('change', handleLogoUpload);
     }
     
     function handleEditorInput(e) {
@@ -615,7 +648,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const docRef = await quotesCollection.add(newQuote);
             activeQuoteId = docRef.id;
             if (doSwitchToEditor) {
-                // The listener will pick up the change and render it
                 showEditorView();
             }
         } catch (error) {
@@ -632,7 +664,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (activeQuoteId === quoteId) {
                     activeQuoteId = null; 
                 }
-                // The onSnapshot listener will handle re-rendering the list.
             } catch (error) {
                 console.error("Error deleting quote: ", error);
             }
@@ -646,10 +677,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const blankQuoteTemplate = createNewQuoteObject();
             const clearedQuoteData = { ...blankQuoteTemplate, name: currentQuote.name, company: currentQuote.company, quoteNumber: currentQuote.quoteNumber };
             
-            // Apply changes to the object in Firestore
             quotesCollection.doc(currentQuote.id).set(clearedQuoteData, { merge: true })
                 .then(() => {
-                    // Then re-render the editor with the cleared data from local state to feel instant
                      renderQuote(currentQuote.id);
                 })
                 .catch(err => console.error("Error clearing quote:", err));
@@ -669,7 +698,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function hideConfirmModal() { confirmModal.style.display = 'none'; confirmCallback = null; }
 
     function renderSavedQuotes(quotesToRender, page = 1) {
-        currentFilteredQuotes = quotesToRender; // Store the full filtered list for pagination
+        currentFilteredQuotes = quotesToRender;
         quotesCurrentPage = page;
 
         savedQuotesContainer.innerHTML = '';
@@ -1058,5 +1087,101 @@ document.addEventListener('DOMContentLoaded', function() {
 
         hideAutocomplete();
         activeAutocompleteInput.focus();
+    }
+
+    // --- New Helper Functions for UI Customization & AI ---
+
+    const pSBC = (p, c0, c1, l) => {
+        let r, g, b, P, f, t, h, i = parseInt, m = Math.round, a = typeof (c1) == "string";
+        if (typeof (p) != "number" || p < -1 || p > 1 || typeof (c0) != "string" || (c0[0] != 'r' && c0[0] != '#') || (c1 && !a)) return null;
+        let pSBCr = (d) => {
+            let n = d.length, x = {};
+            if (n > 9) {
+                [r, g, b, a] = d = d.split(","), n = d.length;
+                if (n < 3 || n > 4) return null;
+                x.r = i(r[3] == "a" ? r.slice(5) : r.slice(4)), x.g = i(g), x.b = i(b), x.a = a ? parseFloat(a) : -1
+            } else {
+                if (n == 8 || n == 6 || n < 4) return null;
+                if (n < 6) d = "#" + d[1] + d[1] + d[2] + d[2] + d[3] + d[3] + (n > 4 ? d[4] + d[4] : "");
+                d = i(d.slice(1), 16);
+                if (n == 9 || n == 5) x.r = d >> 24 & 255, x.g = d >> 16 & 255, x.b = d >> 8 & 255, x.a = m((d & 255) / 0.255) / 1000;
+                else x.r = d >> 16, x.g = d >> 8 & 255, x.b = d & 255, x.a = -1
+            } return x
+        };
+        h = c0.length > 9, h = a ? c1.length > 9 ? true : c1 == "c" ? !h : false : h, f = pSBCr(c0), P = p < 0, t = c1 && c1 != "c" ? pSBCr(c1) : P ? { r: 0, g: 0, b: 0, a: -1 } : { r: 255, g: 255, b: 255, a: -1 }, p = P ? p * -1 : p, P = 1 - p;
+        if (!f || !t) return null;
+        if (l) r = m(P * f.r + p * t.r), g = m(P * f.g + p * t.g), b = m(P * f.b + p * t.b);
+        else r = m((P * f.r ** 2 + p * t.r ** 2) ** 0.5), g = m((P * f.g ** 2 + p * t.g ** 2) ** 0.5), b = m((P * f.b ** 2 + p * t.b ** 2) ** 0.5);
+        a = f.a, t = t.a, f = a >= 0 || t >= 0, a = f ? a < 0 ? t : t < 0 ? a : a * P + t * p : 0;
+        if (h) return "rgb" + (f ? "a(" : "(") + r + "," + g + "," + b + (f ? "," + m(a * 1000) / 1000 : "") + ")";
+        else return "#" + (4294967296 + r * 16777216 + g * 65536 + b * 256 + (f ? m(a * 255) : 0)).toString(16).slice(1, f ? undefined : -2)
+    }
+
+    function updatePrimaryColor(color) {
+        if (!color) return;
+        document.documentElement.style.setProperty('--primary-color', color);
+        const darkColor = pSBC(-0.2, color);
+        document.documentElement.style.setProperty('--primary-color-dark', darkColor);
+        const lightColor = pSBC(0.85, color);
+        document.documentElement.style.setProperty('--primary-color-light', lightColor || '#EAF2FB');
+    }
+
+    function handleLogoUpload(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                companyLogo.src = event.target.result;
+                companyLogo.style.display = 'block';
+                logoPlaceholder.style.display = 'none';
+            }
+            reader.readAsDataURL(file);
+        }
+    }
+
+    async function generateSpecWithAI(e) {
+        const button = e.currentTarget;
+        const row = button.closest('tr');
+        const itemNameInput = row.querySelector('.item-name');
+        const specTextarea = row.querySelector('.item-spec');
+
+        const itemName = itemNameInput.value.trim();
+        if (!itemName) {
+            alert('Vui lòng nhập tên sản phẩm trước khi dùng AI.');
+            itemNameInput.focus();
+            return;
+        }
+
+        button.classList.add('loading');
+        specTextarea.placeholder = 'AI đang suy nghĩ...';
+
+        try {
+            const prompt = `Với vai trò là một chuyên gia về nội thất và vật liệu xây dựng, hãy viết một mô tả quy cách kỹ thuật chuyên nghiệp và súc tích cho sản phẩm có tên sau: "${itemName}".
+        
+Yêu cầu:
+- Chỉ tập trung vào các thông số kỹ thuật, vật liệu chính, và đặc điểm nổi bật.
+- Giữ mô tả trong khoảng 1-3 câu.
+- Không lặp lại tên sản phẩm ở đầu mô tả.
+- Ví dụ: Với "Tủ bếp trên", mô tả có thể là: "Thùng tủ gỗ MDF lõi xanh chống ẩm An Cường, bề mặt phủ Melamine. Cánh tủ Acrylic không đường line, bản lề giảm chấn Hafele."
+
+Hãy tạo ra mô tả cho sản phẩm: "${itemName}"`;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: prompt,
+            });
+            
+            const text = response.text.trim();
+            specTextarea.value = text;
+            specTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+        } catch (error) {
+            console.error("Error generating content with AI:", error);
+            alert('Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại.');
+            specTextarea.value = 'Lỗi: Không thể tạo mô tả.';
+        } finally {
+            button.classList.remove('loading');
+            specTextarea.placeholder = 'Quy cách, mô tả chi tiết...';
+        }
     }
 });
