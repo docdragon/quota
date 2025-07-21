@@ -1,97 +1,25 @@
 /*
 ================================================================================
-QUAN TRỌNG: HƯỚNG DẪN SỬA LỖI VÀ CẤU HÌNH CLOUDFLARE WORKER
+CẤU HÌNH CLOUDFLARE WORKER
 ================================================================================
 
-Chào bạn, lỗi 'No such module "https:/esm.sh/..."' xảy ra do một lỗi đánh máy
-trong đoạn code cho Cloudflare Worker mà tôi đã gửi trước đây.
+Chào bạn, để khắc phục lỗi bạn đang gặp phải và để dự án dễ quản lý hơn,
+mã nguồn cho Cloudflare Worker đã được chuyển sang một file riêng là `worker.js`.
 
-Lỗi này KHÔNG nằm trong file script.js này, mà nằm trong code bạn đã dán
-vào màn hình "Quick Edit" của Cloudflare Worker.
+LỖI BẠN GẶP ("Cannot find module...") là lỗi từ trình soạn thảo mã (editor)
+chứ không phải lỗi khi chạy trên Cloudflare. File `worker.js` đã được thêm
+một chỉ thị đặc biệt để ẩn lỗi này đi.
 
-Để sửa lỗi, hãy làm theo các bước sau:
-
-1. MỞ LẠI CLOUDFLARE WORKER CỦA BẠN:
-   - Truy cập trang quản lý Worker của bạn trên Cloudflare.
-   - Nhấn vào nút "Quick Edit".
-
-2. THAY THẾ TOÀN BỘ CODE CŨ:
-   - Xóa hết code hiện có trong trình soạn thảo.
-   - Sao chép (Copy) TOÀN BỘ đoạn code trong khung bên dưới và Dán (Paste) vào.
-
-3. DÁN ĐOẠN CODE ĐÚNG NÀY VÀO WORKER:
-   (Dòng import đã được sửa từ "https:/..." thành "https://...")
---------------------------------------------------------------------------------
-import { GoogleGenAI } from "https://esm.sh/@google/genai@^1.10.0";
-
-export default {
-  async fetch(request, env, ctx) {
-    if (request.method === 'OPTIONS') {
-      return handleOptions(request);
-    }
-    if (request.method !== 'POST') {
-      return new Response('Expected POST', { status: 405 });
-    }
-    if (request.headers.get('Content-Type') !== 'application/json') {
-        return new Response('Expected Content-Type: application/json', { status: 415 });
-    }
-    try {
-      const body = await request.json();
-      const { prompt } = body;
-      if (!prompt) {
-        return new Response(JSON.stringify({ error: 'Missing "prompt" in request body' }), {
-          status: 400,
-          headers: corsHeaders(request),
-        });
-      }
-      if (!env.GEMINI_API_KEY) {
-          return new Response(JSON.stringify({ error: "Chưa cấu hình GEMINI_API_KEY trong Worker. Vui lòng vào Settings > Variables." }), {
-              status: 500,
-              headers: corsHeaders(request),
-          });
-      }
-      const ai = new GoogleGenAI({ apiKey: env.GEMINI_API_KEY });
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: prompt,
-      });
-      const responseBody = JSON.stringify({ text: response.text });
-      return new Response(responseBody, {
-        status: 200,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders(request) }
-      });
-    } catch (e) {
-      console.error(e);
-      return new Response(JSON.stringify({ error: e.message }), {
-        status: 500,
-        headers: { 'Content-Type': 'application/json', ...corsHeaders(request) },
-      });
-    }
-  },
-};
-
-function corsHeaders(request) {
-    const origin = request ? request.headers.get('Origin') : '*'; // For production, restrict this to your page's domain
-    return {
-        'Access-Control-Allow-Origin': origin,
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-    };
-}
-
-function handleOptions(request) {
-    return new Response(null, { status: 204, headers: corsHeaders(request) });
-}
---------------------------------------------------------------------------------
-
-4. NHẤN "SAVE AND DEPLOY".
-
-5. CẬP NHẬT URL BÊN DƯỚI:
-   - Sau khi deploy, Cloudflare sẽ cung cấp cho bạn một URL cho Worker.
-   - Dán URL đó vào biến `AI_WORKER_URL` bên dưới để hoàn tất.
+VIỆC CẦN LÀM:
+1.  Mở file `worker.js` trong dự án này.
+2.  Sao chép TOÀN BỘ nội dung của file đó.
+3.  Dán vào trình "Quick Edit" trên Cloudflare Worker của bạn, thay thế code cũ.
+4.  Nhấn "Save and Deploy".
+5.  Dán URL của Worker sau khi deploy vào biến `AI_WORKER_URL` bên dưới.
 
 ================================================================================
 */
+
 
 // IMPORTANT: This import is no longer used in the client, but keep it here
 // in case other AI features are added in the future.
