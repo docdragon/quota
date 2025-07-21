@@ -19,7 +19,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const db = firebase.firestore();
     let quotesCollection;
     let managedItemsCollection;
-    const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+    let ai = null; // Initialize as null
+    try {
+        // This will fail in a browser environment without a build step, which is expected.
+        // The error is caught below, and AI features are disabled gracefully.
+        ai = new GoogleGenAI({apiKey: process.env.API_KEY});
+    } catch (e) {
+        console.warn("Google AI SDK could not be initialized because the API key is missing. AI features will be disabled. This is expected if 'process.env.API_KEY' is not available in your environment. To enable AI, you need to configure this environment variable, for example, through a build process or a server-side proxy.");
+    }
 
 
     // --- Global State ---
@@ -375,6 +382,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const row = document.createElement('tr');
         row.className = 'item-row';
         row.draggable = true;
+
+        const aiButtonHTML = ai ? `
+            <button class="ai-spec-btn" title="Gợi ý mô tả với AI">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 0 0-3 0l-1.076-2.29a.5.5 0 0 0-.916.41l1.076 2.29a1.5 1.5 0 0 0 3 0zm-3.21-4.21a.5.5 0 0 1 .71 0l.565.565a.5.5 0 0 1 0 .708l-.565.565a.5.5 0 0 1-.71 0l-.565-.565a.5.5 0 0 1 0-.708l.565-.565zM12.5 7a1.5 1.5 0 0 0-3 0l-1.076-2.29a.5.5 0 0 0-.916.41l1.076 2.29a1.5 1.5 0 0 0 3 0zM8 1a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 1zm4.21 1.79a.5.5 0 0 1 0 .71l-.566.565a.5.5 0 0 1-.707 0l-.565-.565a.5.5 0 0 1 0-.71l.565-.565a.5.5 0 0 1 .707 0zM1 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1 8z"/></svg>
+                <div class="spinner"></div>
+            </button>` : '';
+
         row.innerHTML = `
             <td data-label="STT"></td>
             <td data-label="Nội dung"><div class="content-cell">
@@ -386,10 +400,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>x</span><input type="number" class="dimension dim-c" value="${itemData.dimC || 0}" min="0" step="0.01" title="Cao (m)" placeholder="Cao">
                 </div>
                 <textarea class="item-spec" placeholder="Quy cách, mô tả chi tiết..." rows="1">${itemData.spec || ''}</textarea>
-                <button class="ai-spec-btn" title="Gợi ý mô tả với AI">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 0 0-3 0l-1.076-2.29a.5.5 0 0 0-.916.41l1.076 2.29a1.5 1.5 0 0 0 3 0zm-3.21-4.21a.5.5 0 0 1 .71 0l.565.565a.5.5 0 0 1 0 .708l-.565.565a.5.5 0 0 1-.71 0l-.565-.565a.5.5 0 0 1 0-.708l.565-.565zM12.5 7a1.5 1.5 0 0 0-3 0l-1.076-2.29a.5.5 0 0 0-.916.41l1.076 2.29a1.5 1.5 0 0 0 3 0zM8 1a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 1zm4.21 1.79a.5.5 0 0 1 0 .71l-.566.565a.5.5 0 0 1-.707 0l-.565-.565a.5.5 0 0 1 0-.71l.565-.565a.5.5 0 0 1 .707 0zM1 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1 8z"/></svg>
-                    <div class="spinner"></div>
-                </button>
+                ${aiButtonHTML}
             </div></td>
             <td data-label="Đơn vị"><input type="text" value="${itemData.unit || 'cái'}"></td>
             <td data-label="KL (m²)" class="volume text-right">0.00</td>
@@ -398,7 +409,9 @@ document.addEventListener('DOMContentLoaded', function() {
             <td data-label="Thành tiền" class="line-total text-right">0</td>
             <td class="actions"><button class="delete-btn" title="Xóa dòng" aria-label="Xóa dòng"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></td>`;
         
-        row.querySelector('.ai-spec-btn').addEventListener('click', generateSpecWithAI);
+        if (ai) {
+            row.querySelector('.ai-spec-btn').addEventListener('click', generateSpecWithAI);
+        }
         
         const textarea = row.querySelector('.item-spec');
         textarea.addEventListener('input', () => { textarea.style.height = 'auto'; textarea.style.height = (textarea.scrollHeight) + 'px'; });
@@ -1140,6 +1153,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function generateSpecWithAI(e) {
+        // Guard clause in case this is ever called when AI is not initialized.
+        if (!ai) {
+            alert('Chức năng AI không khả dụng. Vui lòng kiểm tra lại cấu hình API key.');
+            console.error("generateSpecWithAI called but AI is not initialized.");
+            return;
+        }
+
         const button = e.currentTarget;
         const row = button.closest('tr');
         const itemNameInput = row.querySelector('.item-name');
