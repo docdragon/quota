@@ -337,18 +337,20 @@ td .volume { font-size: 0.9em; color: var(--text-muted); font-family: 'Courier N
     justify-content: center;
     cursor: pointer;
     transition: all var(--transition-speed);
-    opacity: 0; /* Show on hover of parent */
-    transform: scale(0.8) translateY(-4px);
+    opacity: 0.6; /* Made visible by default for better discoverability */
+    transform: scale(0.9);
     z-index: 10;
 }
+/* When hovering the cell, the button becomes fully visible and grows to normal size */
 td:hover .ai-spec-btn, .ai-spec-btn:focus {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: scale(1);
 }
+/* When hovering the button itself, it gets a special highlight */
 .ai-spec-btn:hover {
     background-color: var(--primary-color);
     color: var(--white);
-    transform: scale(1.1);
+    transform: scale(1.1); /* Slightly larger on direct hover */
 }
 .ai-spec-btn.loading {
     cursor: wait;
