@@ -424,8 +424,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     <span>x</span><input type="number" class="dimension dim-s" value="${itemData.dimS || 0}" min="0" step="0.01" title="Sâu (m)" placeholder="Sâu">
                     <span>x</span><input type="number" class="dimension dim-c" value="${itemData.dimC || 0}" min="0" step="0.01" title="Cao (m)" placeholder="Cao">
                 </div>
-                <textarea class="item-spec" placeholder="Quy cách, mô tả chi tiết..." rows="1">${itemData.spec || ''}</textarea>
-                ${aiButtonHTML}
+                <div class="spec-wrapper">
+                    <textarea class="item-spec" placeholder="Quy cách, mô tả chi tiết..." rows="1">${itemData.spec || ''}</textarea>
+                    ${aiButtonHTML}
+                </div>
             </div></td>
             <td data-label="Đơn vị"><input type="text" value="${itemData.unit || 'cái'}"></td>
             <td data-label="KL (m²)" class="volume text-right">0.00</td>
