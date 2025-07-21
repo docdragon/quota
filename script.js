@@ -1,8 +1,15 @@
+// IMPORTANT: This import is no longer used in the client, but keep it here
+// in case other AI features are added in the future.
+// The actual AI call is now handled by the Cloudflare Worker.
 import { GoogleGenAI } from "@google/genai";
 
 document.addEventListener('DOMContentLoaded', function() {
+    // --- Configuration ---
+    // PASTE YOUR CLOUDFLARE WORKER URL HERE
+    // DÁN URL CLOUDFLARE WORKER CỦA BẠN VÀO ĐÂY
+    const AI_WORKER_URL = 'https://baogia-ai-proxy.your-username.workers.dev'; // <<< THAY THẾ URL NÀY
+
     // --- Firebase Configuration ---
-    // IMPORTANT: Replace with your own Firebase project configuration
     const firebaseConfig = {
         apiKey: "AIzaSyDFhW2GT1e4hx7GGed9QuBseG0hRZx2uVI",
         authDomain: "quota-96ee4.firebaseapp.com",
@@ -13,20 +20,16 @@ document.addEventListener('DOMContentLoaded', function() {
         measurementId: "G-JTYHFWD3L1"
     };
 
-    // --- Firebase & AI Initialization ---
+    // --- Firebase Initialization ---
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
     let quotesCollection;
     let managedItemsCollection;
-    let ai = null; // Initialize as null
-    try {
-        // This will fail in a browser environment without a build step, which is expected.
-        // The error is caught below, and AI features are disabled gracefully.
-        ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-    } catch (e) {
-        console.warn("Google AI SDK could not be initialized because the API key is missing. AI features will be disabled. This is expected if 'process.env.API_KEY' is not available in your environment. To enable AI, you need to configure this environment variable, for example, through a build process or a server-side proxy.");
-    }
+
+    // The AI SDK is no longer initialized here.
+    // We will check for the worker URL to decide if AI features are enabled.
+    const aiFeaturesEnabled = AI_WORKER_URL && !AI_WORKER_URL.includes('your-username');
 
 
     // --- Global State ---
@@ -106,7 +109,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const primaryColorPicker = document.getElementById('primary-color-picker');
 
     // --- Event Listeners Setup ---
-    // Setup login listener immediately on load
     if (loginBtn) {
         loginBtn.addEventListener('click', () => {
             auth.signInWithPopup(new firebase.auth.GoogleAuthProvider())
@@ -118,12 +120,11 @@ document.addEventListener('DOMContentLoaded', function() {
     } else {
         console.error("FATAL: Login button with id 'login-btn' not found in the DOM.");
     }
-    setupGlobalEventListeners(); // Setup all other listeners
+    setupGlobalEventListeners();
 
     // --- Authentication ---
     auth.onAuthStateChanged(user => {
         if (user) {
-            // User is signed in
             loginView.style.display = 'none';
             mainHeader.style.display = 'block';
             appContainer.style.display = 'block';
@@ -135,13 +136,11 @@ document.addEventListener('DOMContentLoaded', function() {
             setupUserProfile(user);
             initializeAppState();
         } else {
-            // User is signed out
             loginView.style.display = 'flex';
             mainHeader.style.display = 'none';
             appContainer.style.display = 'none';
             userProfile.style.display = 'none';
             
-            // Clear state and unsubscribe from listeners
             unsubscribeQuotes();
             unsubscribeManagedItems();
             quotes = [];
@@ -161,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
         loadQuotes();
         loadManagedItems();
         updateDate();
-        showEditorView(); // Default to editor view
+        showEditorView(); 
     }
 
     async function loadQuotes() {
@@ -169,7 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
             .orderBy('lastModified', 'desc')
             .onSnapshot(async (snapshot) => {
                 if (snapshot.empty && quotes.length === 0) {
-                    await addNewQuote(false); // Create first quote if none exist and it's the very first load
+                    await addNewQuote(false);
                     return;
                 }
                 
@@ -235,7 +234,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 2000);
     }
     
-    // --- Data Collection ---
     function collectQuoteDataFromDOM() {
         const tableData = [];
         tableBody.querySelectorAll('tr').forEach(row => {
@@ -274,7 +272,6 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // --- View Management ---
     function showView(viewToShow) {
         [editorView, listView, managementView].forEach(view => {
             view.style.display = view === viewToShow ? 'block' : 'none';
@@ -299,8 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
         showView(managementView); 
     }
 
-
-    // --- Rendering ---
     function renderQuote(quoteIdToRender) {
         const quote = quotes.find(q => q.id === quoteIdToRender);
         if (!quote) {
@@ -372,7 +367,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotals();
     }
 
-    // --- Core Logic & DOM Creation ---
     function updateDate() { document.getElementById('quote-date').textContent = `Ngày ${new Date().getDate()} tháng ${new Date().getMonth() + 1} năm ${new Date().getFullYear()}`; }
     function formatCurrency(num) { return num.toLocaleString('vi-VN'); }
     function formatPriceInput(input) { let numericString = input.value.replace(/\D/g, ''); if (numericString) { input.value = new Intl.NumberFormat('vi-VN').format(BigInt(numericString)); } else { input.value = ''; } }
@@ -383,7 +377,7 @@ document.addEventListener('DOMContentLoaded', function() {
         row.className = 'item-row';
         row.draggable = true;
 
-        const aiButtonHTML = ai ? `
+        const aiButtonHTML = aiFeaturesEnabled ? `
             <button class="ai-spec-btn" title="Gợi ý mô tả với AI">
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="currentColor" viewBox="0 0 16 16"><path d="M9.5 13a1.5 1.5 0 0 0-3 0l-1.076-2.29a.5.5 0 0 0-.916.41l1.076 2.29a1.5 1.5 0 0 0 3 0zm-3.21-4.21a.5.5 0 0 1 .71 0l.565.565a.5.5 0 0 1 0 .708l-.565.565a.5.5 0 0 1-.71 0l-.565-.565a.5.5 0 0 1 0-.708l.565-.565zM12.5 7a1.5 1.5 0 0 0-3 0l-1.076-2.29a.5.5 0 0 0-.916.41l1.076 2.29a1.5 1.5 0 0 0 3 0zM8 1a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 1zm4.21 1.79a.5.5 0 0 1 0 .71l-.566.565a.5.5 0 0 1-.707 0l-.565-.565a.5.5 0 0 1 0-.71l.565-.565a.5.5 0 0 1 .707 0zM1 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2A.5.5 0 0 1 1 8z"/></svg>
                 <div class="spinner"></div>
@@ -409,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
             <td data-label="Thành tiền" class="line-total text-right">0</td>
             <td class="actions"><button class="delete-btn" title="Xóa dòng" aria-label="Xóa dòng"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg></button></td>`;
         
-        if (ai) {
+        if (aiFeaturesEnabled) {
             row.querySelector('.ai-spec-btn').addEventListener('click', generateSpecWithAI);
         }
         
@@ -456,7 +450,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateTotals() {
         let grandSubtotal = 0;
     
-        // First pass: calculate all individual item totals and the grand subtotal.
         tableBody.querySelectorAll('tr.item-row').forEach(row => {
             const length = parseFloat(row.querySelector('.dim-d').value) || 0;
             const height = parseFloat(row.querySelector('.dim-c').value) || 0;
@@ -470,12 +463,10 @@ document.addEventListener('DOMContentLoaded', function() {
             grandSubtotal += lineTotal;
         });
     
-        // Second pass: iterate through all rows to find categories and sum up following items.
         const rows = Array.from(tableBody.children);
         for (let i = 0; i < rows.length; i++) {
             if (rows[i].classList.contains('category-header')) {
                 let categorySubtotal = 0;
-                // Look ahead for item rows belonging to this category.
                 for (let j = i + 1; j < rows.length; j++) {
                     const nextRow = rows[j];
                     if (nextRow.classList.contains('item-row')) {
@@ -483,11 +474,9 @@ document.addEventListener('DOMContentLoaded', function() {
                         const price = parseFloat((nextRow.querySelector('.price').value || '0').replace(/\./g, '')) || 0;
                         categorySubtotal += quantity * price;
                     } else if (nextRow.classList.contains('category-header')) {
-                        // Found the next category, so this one is done.
                         break;
                     }
                 }
-                // Update the total cell for the current category.
                 const totalElement = rows[i].querySelector('.category-total');
                 if (totalElement) {
                     totalElement.textContent = formatCurrency(categorySubtotal);
@@ -495,7 +484,6 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     
-        // Final summary calculation at the bottom of the page.
         const taxRate = (parseFloat(vatRateInput.value) || 0) / 100;
         const tax = grandSubtotal * taxRate;
         const grandTotal = grandSubtotal + tax;
@@ -504,20 +492,16 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('grand-total').textContent = formatCurrency(grandTotal);
     }
     
-    // --- Drag and Drop Handlers ---
     let draggedElement = null;
 
     function handleDragStart(e) {
-        // Only start drag if the source is not an input-like element.
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
             e.preventDefault();
             return;
         }
-
         draggedElement = e.target.closest('.item-row');
         if (!draggedElement) return;
-
-        e.dataTransfer.setData('text/plain', null); // Firefox fix
+        e.dataTransfer.setData('text/plain', null);
         e.dataTransfer.effectAllowed = 'move';
         setTimeout(() => draggedElement.classList.add('dragging'), 0);
     }
@@ -525,17 +509,13 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleDragOver(e) {
         e.preventDefault();
         if (!draggedElement) return;
-
         const overElement = e.target.closest('tr');
         if (!overElement || overElement === draggedElement) return;
-        
         tableBody.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
             el.classList.remove('drag-over-top', 'drag-over-bottom');
         });
-
         const rect = overElement.getBoundingClientRect();
         const offset = e.clientY - rect.top;
-
         if (overElement.classList.contains('category-header')) {
             overElement.classList.add('drag-over-bottom');
         } else if (offset > rect.height / 2) {
@@ -548,7 +528,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleDrop(e) {
         e.preventDefault();
         if (!draggedElement) return;
-
         const dropZone = e.target.closest('tr');
         if (dropZone && dropZone !== draggedElement) {
             if (dropZone.classList.contains('drag-over-bottom')) {
@@ -561,7 +540,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function handleDragEnd() {
         if (draggedElement) draggedElement.classList.remove('dragging');
-        
         tableBody.querySelectorAll('.drag-over-top, .drag-over-bottom').forEach(el => {
             el.classList.remove('drag-over-top', 'drag-over-bottom');
         });
@@ -570,25 +548,18 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotals();
     }
 
-
-    // --- Event Handlers ---
     function setupGlobalEventListeners() {
         logoutBtn.addEventListener('click', () => { auth.signOut().catch(err => console.error("Logout failed:", err)); });
-
         navEditor.addEventListener('click', showEditorView);
         navList.addEventListener('click', showListView);
         navManagement.addEventListener('click', showManagementView);
-
         saveQuoteBtn.addEventListener('click', handleSaveQuote);
         clearQuoteBtn.addEventListener('click', handleClearQuote);
-        
         editorView.addEventListener('input', handleEditorInput);
         editorView.addEventListener('focusin', handleAutocompleteFocus);
         editorView.addEventListener('keydown', handleAutocompleteKeydown);
         editorView.addEventListener('focusout', handleAutocompleteBlur);
-        
         autocompleteBox.addEventListener('mousedown', (e) => e.preventDefault());
-
         addRowBtn.addEventListener('click', () => { tableBody.appendChild(createItemRowDOM()); updateRowNumbers(); updateTotals(); });
         addCategoryBtn.addEventListener('click', () => { tableBody.appendChild(createCategoryRowDOM()); updateTotals(); });
         addFromSavedBtn.addEventListener('click', openSelectItemModal);
@@ -618,25 +589,19 @@ document.addEventListener('DOMContentLoaded', function() {
         createNewQuoteFromListBtn.addEventListener('click', () => { addNewQuote(); showEditorView(); });
         searchQuotesInput.addEventListener('input', handleSearchQuotes);
         savedQuotesContainer.addEventListener('click', handleQuoteListClick);
-
         confirmCancelBtn.addEventListener('click', hideConfirmModal);
         confirmOkBtn.addEventListener('click', () => { if (typeof confirmCallback === 'function') { confirmCallback(); } hideConfirmModal(); });
         confirmModal.addEventListener('click', (e) => { if (e.target === confirmModal) hideConfirmModal(); });
-
         addItemForm.addEventListener('submit', handleManageItemSubmit);
         itemFormCancelBtn.addEventListener('click', resetManagementForm);
         savedItemsList.addEventListener('click', handleSavedItemsListClick);
-
         selectItemModal.querySelector('.close-modal-btn').addEventListener('click', closeSelectItemModal);
         selectItemModal.addEventListener('click', (e) => { if (e.target === selectItemModal) closeSelectItemModal(); });
         searchSavedItemsInput.addEventListener('input', (e) => renderSelectableItems(managedItems, e.target.value));
         selectItemList.addEventListener('click', handleSelectableItemClick);
-
         searchManagedItemsInput.addEventListener('input', handleSearchManagedItems);
         quotesPaginationContainer.addEventListener('click', handleQuotesPaginationClick);
         managedItemsPaginationContainer.addEventListener('click', handleManagedItemsPaginationClick);
-
-        // Listeners for new UI
         primaryColorPicker.addEventListener('input', (e) => updatePrimaryColor(e.target.value));
         logoContainer.addEventListener('click', () => logoUploadInput.click());
         logoUploadInput.addEventListener('change', handleLogoUpload);
@@ -652,7 +617,6 @@ document.addEventListener('DOMContentLoaded', function() {
         updateTotals();
     }
 
-    // --- Quote Actions ---
     function switchQuote(quoteId) { if (quoteId === activeQuoteId) { showEditorView(); return; }; activeQuoteId = quoteId; renderQuote(activeQuoteId); showEditorView(); }
     
     async function addNewQuote(doSwitchToEditor = true) {
@@ -698,7 +662,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // --- Quote List View ---
     function showConfirmModal(title, message, onConfirm) {
         confirmTitle.textContent = title;
         confirmMessage.textContent = message;
@@ -770,7 +733,6 @@ document.addEventListener('DOMContentLoaded', function() {
         else if (target.closest('.btn-delete')) deleteQuote(quoteId);
     }
     
-    // --- Management View ---
     function renderManagedItems(items, page = 1) {
         currentFilteredManagedItems = items;
         managedItemsCurrentPage = page;
@@ -877,7 +839,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // --- Pagination ---
     function renderPaginationControls(container, currentPage, totalItems, itemsPerPage) {
         container.innerHTML = '';
         const totalPages = Math.ceil(totalItems / itemsPerPage);
@@ -900,7 +861,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleQuotesPaginationClick(e) {
         const button = e.target.closest('.pagination-btn');
         if (!button || button.disabled) return;
-
         const action = button.dataset.action;
         if (action === 'prev') {
             quotesCurrentPage--;
@@ -913,7 +873,6 @@ document.addEventListener('DOMContentLoaded', function() {
     function handleManagedItemsPaginationClick(e) {
         const button = e.target.closest('.pagination-btn');
         if (!button || button.disabled) return;
-
         const action = button.dataset.action;
         if (action === 'prev') {
             managedItemsCurrentPage--;
@@ -923,7 +882,6 @@ document.addEventListener('DOMContentLoaded', function() {
         renderManagedItems(currentFilteredManagedItems, managedItemsCurrentPage);
     }
 
-    // --- Select Item Modal ---
     function openSelectItemModal() {
         renderSelectableItems(managedItems);
         selectItemModal.style.display = 'flex';
@@ -967,7 +925,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
     
-    // --- Autocomplete Logic ---
     function handleAutocompleteFocus(e) {
         if (e.target.matches('.item-name')) {
             activeAutocompleteInput = e.target;
@@ -1039,7 +996,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(autocompleteHideTimeout);
         autocompleteBox.innerHTML = '';
         
-        results.slice(0, 10).forEach(item => { // Limit to 10 suggestions
+        results.slice(0, 10).forEach(item => { 
             const div = document.createElement('div');
             div.className = 'autocomplete-item';
             div.dataset.id = item.id;
@@ -1102,8 +1059,6 @@ document.addEventListener('DOMContentLoaded', function() {
         activeAutocompleteInput.focus();
     }
 
-    // --- New Helper Functions for UI Customization & AI ---
-
     const pSBC = (p, c0, c1, l) => {
         let r, g, b, P, f, t, h, i = parseInt, m = Math.round, a = typeof (c1) == "string";
         if (typeof (p) != "number" || p < -1 || p > 1 || typeof (c0) != "string" || (c0[0] != 'r' && c0[0] != '#') || (c1 && !a)) return null;
@@ -1153,10 +1108,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     async function generateSpecWithAI(e) {
-        // Guard clause in case this is ever called when AI is not initialized.
-        if (!ai) {
-            alert('Chức năng AI không khả dụng. Vui lòng kiểm tra lại cấu hình API key.');
-            console.error("generateSpecWithAI called but AI is not initialized.");
+        if (!aiFeaturesEnabled) {
+            alert('Chức năng AI chưa được cấu hình. Vui lòng kiểm tra lại URL của Worker.');
+            console.error("generateSpecWithAI called but AI Worker URL is not configured.");
             return;
         }
 
@@ -1186,18 +1140,29 @@ Yêu cầu:
 
 Hãy tạo ra mô tả cho sản phẩm: "${itemName}"`;
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: prompt,
+            // Call the Cloudflare Worker instead of Google AI directly
+            const response = await fetch(AI_WORKER_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ prompt: prompt }),
             });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.error || `Request failed with status ${response.status}`);
+            }
+
+            const data = await response.json();
+            const text = data.text.trim();
             
-            const text = response.text.trim();
             specTextarea.value = text;
             specTextarea.dispatchEvent(new Event('input', { bubbles: true }));
 
         } catch (error) {
-            console.error("Error generating content with AI:", error);
-            alert('Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại.');
+            console.error("Error generating content via Worker:", error);
+            alert('Đã có lỗi xảy ra khi kết nối với AI. Vui lòng thử lại. Lỗi: ' + error.message);
             specTextarea.value = 'Lỗi: Không thể tạo mô tả.';
         } finally {
             button.classList.remove('loading');
